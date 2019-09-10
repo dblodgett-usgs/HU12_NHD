@@ -34,6 +34,20 @@ write_output_gpkg <- function(net, wbd, hu_joiner, points, prj, viz_simp, out_di
   write_sf(points, wbd_viz_gpkg, "linked_points")
 }
 
+write_rf1_output <- function(rf1, rf1_nhdplus, rf1_out) {
+  ret <- select(rf1_nhdplus, ERF1_2. = member_ID, LevelPathI = mr_LevelPathI)
+  readr::write_csv(ret,
+                   file.path(rf1_out, "map_joiner.csv"))
+  
+  viz_gpkg <- file.path(rf1_out, "wbd_viz.gpkg")
+  
+  ret <- left_join(rf1, ret, by = c("ID" = "ERF1_2."))
+  
+  write_sf(ret, viz_gpkg)  
+  
+  ret
+}
+
 geom_plot_data <- function(hu12, net, lookup, filter) {
   
   lookup <- filter(lookup, grepl(filter, lookup$HUC12)) %>%

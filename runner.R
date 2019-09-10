@@ -10,6 +10,8 @@ library(readr)
 library(rmapshaper)
 library(R.utils)
 library(tidyr)
+library(igraph)
+library(readr)
 
 source("R/1_download_data.R")
 source("R/2_fixes.R")
@@ -17,6 +19,7 @@ source("R/3_setup.R")
 source("R/4_find_match.R")
 source("R/5_find_outlets.R")
 source("R/6_visualize.R")
+source("R/10_build_mainstems_table.R")
 
 plan <- drake_plan(
   ##### Constants
@@ -24,7 +27,6 @@ plan <- drake_plan(
   prj = 5070,
   viz_simp = 30,
   proc_simp = 10,
-  wbd_viz_gpkg = "wbd_viz.gpkg",
   temp_dir = "temp/",
   nhdplus_dir = "data/nhdp/",
   nhdplus_gdb = "NHDPlusNationalData/NHDPlusV21_National_Seamless.gdb",
@@ -41,6 +43,7 @@ plan <- drake_plan(
   ##### Load Data
   nhdplus_wbd = get_wbd(nhdplus_gdb_path, nhdplus_wbd_fixes, prj),
   nhdplus_net = get_net(read_sf(nhdplus_gdb_path, "NHDFlowline_Network"), prj),
+  nhdplus_net_atts = st_set_geometry(nhdplus_net, NULL),
   ##### Match NHDPlusV2 with stable (old) WBD
   nhdplus_oldwbd_out = "nhdplus_oldwbd_out/",
   nhdplus_oldwbd_hu_joiner = get_hu_joiner(nhdplus_net, nhdplus_wbd, proc_simp, cores, temp_dir, nhdplus_oldwbd_out),
@@ -79,11 +82,22 @@ plan <- drake_plan(
   out_wbd_plot_data = get_wbd_plot_data(nhdplus_net, wbd_gdb_path, nhdplus_newwbd_plumbing, viz_simp, prj, cores, file.path(nhdplus_newwbd_out, "wbd_plots.gpkg")),
   out_wbd_plots = plot_wbd(out_wbd_plot_data),
   # Match RF1 to NHDPlusV2
+  rf1_out = "rf1_out",
   rf1_hw = get_hw_points(rf1),
   rf1_nhdplus_hw_pairs = get_hw_pairs(rf1_hw, nhdplus_cats),
   rf1_nhdplus = match_flowpaths(st_set_geometry(nhdplus_net, NULL), 
                                 st_set_geometry(rf1, NULL),
-                                rf1_nhdplus_hw_pairs)
+                                rf1_nhdplus_hw_pairs),
+  rf1_output = write_rf1_output(rf1, rf1_nhdplus, rf1_out),
+  mainstems_table = build_mainstem_table(nhdplus_net_atts, 
+                                         nhdplus_oldwbd_linked_points, 
+                                         nhdplus_newwbd_linked_points,
+                                         rf1_nhdplus,
+                                         rf1,
+                                         st_set_geometry(nhdplus_wbd, NULL),
+                                         st_set_geometry(wbd, NULL)),
+  mainstems_table_summary = make_ms_summary(mainstems_table, nhdplus_net_atts),
+  hist_list = get_hist_list(mainstems_table_summary)
   ##### NHDPlsuHR Stuff
   # nhdhr_hu02 = c("01", "02"),
   # nhdhr_dir = "data/hr",
