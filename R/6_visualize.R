@@ -307,3 +307,74 @@ dm_fun <- function(id, network) {
 um_fun <- function(id, network) {
   nhdplusTools::get_UM(network = network, comid = id)
 }
+
+get_lp_level <- function(order_f, ms, max_level) {
+  level_f <- max_level - order_f + 1
+  filter(ms, !is.na(outlet_nhdpv2HUC12) & 
+           !is.na(outlet_GNIS_ID) & 
+           order >= order_f &
+           level <= level_f)
+}
+
+get_lp_data <- function(i, ms_lp, dat) {
+  filter(dat, LevelPathI %in% ms_lp[[i]]$LevelPathI)
+}
+
+get_lp_plot_data <- function(nhdp_net, ms, super_simp) {
+  ms <- filter(ms, !is.na(outlet_nhdpv2HUC12))
+
+  nhdp_net <- select(nhdp_net, LevelPathI)
+  nhdp_net <- nhdp_net[nhdp_net$LevelPathI %in% ms$LevelPathI, ]
+  
+  ms <- lapply(c(10:1), get_lp_level, ms = ms, max_level = 10)
+
+  message("simplifying")
+  nhdp_net <- st_simplify(nhdp_net, dTolerance = super_simp)
+  
+  list(bbox = st_as_sfc(st_bbox(nhdp_net), crs = st_crs(nhdp_net)), 
+       lp_data = lapply(c(1:10), get_lp_data, 
+                        dat = nhdp_net, ms_lp = ms),
+       ms = ms)
+}
+
+get_lp_plot_data_wbd <- function(pd, wbd, wbd_lp, super_simp) {
+  wbd <- left_join(wbd, select(st_set_geometry(wbd_lp, NULL), HUC12, LevelPathI), by = "HUC12")
+  
+  ms <- pd$ms
+  
+  wbd <- st_simplify(wbd, dTolerance = super_simp)
+  
+  c(pd, list(wbd = lapply(c(1:10), get_lp_data, 
+                          dat = wbd, ms_lp = ms)))
+}
+
+get_lp_plot_data_rf1 <- function(pd, rf1, rf1_lp, super_simp) {
+  rf1 <- left_join(rf1, select(rf1_lp, -headwater_COMID, LevelPathI = mr_LevelPathI), by = c("ID" = "member_ID"))
+  
+  ms <- pd$ms
+  
+  rf1 <- st_simplify(rf1, dTolerance = super_simp)
+  
+  c(pd, list(rf1 = lapply(c(1:10), get_lp_data, 
+                          dat = rf1, ms_lp = ms)))
+}
+
+get_lp_plots <- function(lp_plot_data, delay) {
+  plotter <- function(i, bbox, lp_plot_data) {
+    par(mar=c(0,0,0,0))
+    plot(bbox)
+    plot(st_geometry(lp_plot_data$lp_data[[i]]), lwd = 2, col = "blue", add = TRUE)
+    plot(st_geometry(lp_plot_data$wbd[[i]]), lwd = 1, col = "lightgrey", add = TRUE)
+    plot(st_geometry(lp_plot_data$rf1[[i]]), lwd = 1.5, col = "red", add = TRUE)
+  }
+  
+  gifski::save_gif({
+    lapply(c(1:5), plotter, 
+           bbox = lp_plot_data$bbox, 
+           lp_plot_data = lp_plot_data)
+  }, 
+  gif_file = "gif/big_animation.gif", 
+  width = 2048, height = 1536, delay = delay)
+  
+}
+

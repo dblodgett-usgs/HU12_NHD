@@ -27,6 +27,7 @@ plan <- drake_plan(
   prj = 5070,
   viz_simp = 30,
   proc_simp = 10,
+  national_viz_simp = 500,
   temp_dir = "temp/",
   nhdplus_dir = "data/nhdp/",
   nhdplus_gdb = "NHDPlusNationalData/NHDPlusV21_National_Seamless.gdb",
@@ -85,9 +86,10 @@ plan <- drake_plan(
   rf1_out = "rf1_out",
   rf1_hw = get_hw_points(rf1),
   rf1_nhdplus_hw_pairs = get_hw_pairs(rf1_hw, nhdplus_cats),
-  rf1_nhdplus = match_flowpaths(st_set_geometry(nhdplus_net, NULL), 
+  rf1_nhdplus = match_flowpaths(left_join(select(prepare_nhdplus(nhdplus_net_atts, 100, 20, 40, FALSE), COMID),
+                                          nhdplus_net_atts, by = "COMID"), #[, 1:40]
                                 st_set_geometry(rf1, NULL),
-                                rf1_nhdplus_hw_pairs),
+                                rf1_nhdplus_hw_pairs, 4),
   rf1_output = write_rf1_output(rf1, rf1_nhdplus, rf1_out),
   mainstems_table = build_mainstem_table(nhdplus_net_atts, 
                                          nhdplus_oldwbd_linked_points, 
@@ -97,7 +99,11 @@ plan <- drake_plan(
                                          st_set_geometry(nhdplus_wbd, NULL),
                                          st_set_geometry(wbd, NULL)),
   mainstems_table_summary = make_ms_summary(mainstems_table, nhdplus_net_atts),
-  hist_list = get_hist_list(mainstems_table_summary)
+  hist_list = get_hist_list(mainstems_table_summary),
+  plot_lps_data = get_lp_plot_data(nhdplus_net, mainstems_table_summary, national_viz_simp),
+  plot_lps_data_wbd = get_lp_plot_data_wbd(plot_lps_data, nhdplus_wbd, nhdplus_oldwbd_linked_points, national_viz_simp),
+  plot_lps_data_all = get_lp_plot_data_rf1(plot_lps_data_wbd, rf1, rf1_nhdplus, national_viz_simp),
+  plot_lps = get_lp_plots(plot_lps_data_all, 2)
   ##### NHDPlsuHR Stuff
   # nhdhr_hu02 = c("01", "02"),
   # nhdhr_dir = "data/hr",
