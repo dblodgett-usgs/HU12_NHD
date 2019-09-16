@@ -369,7 +369,7 @@ get_lp_plots <- function(lp_plot_data, delay) {
   }
   
   gifski::save_gif({
-    lapply(c(1:5), plotter, 
+    lapply(c(1:10), plotter, 
            bbox = lp_plot_data$bbox, 
            lp_plot_data = lp_plot_data)
   }, 

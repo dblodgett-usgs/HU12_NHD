@@ -86,7 +86,7 @@ plan <- drake_plan(
   rf1_out = "rf1_out",
   rf1_hw = get_hw_points(rf1),
   rf1_nhdplus_hw_pairs = get_hw_pairs(rf1_hw, nhdplus_cats),
-  rf1_nhdplus = match_flowpaths(left_join(select(prepare_nhdplus(nhdplus_net_atts, 100, 20, 40, FALSE), COMID),
+  rf1_nhdplus = match_flowpaths(left_join(select(prepare_nhdplus(nhdplus_net_atts, 100, 0, 0, FALSE), COMID),
                                           nhdplus_net_atts, by = "COMID"), #[, 1:40]
                                 st_set_geometry(rf1, NULL),
                                 rf1_nhdplus_hw_pairs, 4),
@@ -103,7 +103,7 @@ plan <- drake_plan(
   plot_lps_data = get_lp_plot_data(nhdplus_net, mainstems_table_summary, national_viz_simp),
   plot_lps_data_wbd = get_lp_plot_data_wbd(plot_lps_data, nhdplus_wbd, nhdplus_oldwbd_linked_points, national_viz_simp),
   plot_lps_data_all = get_lp_plot_data_rf1(plot_lps_data_wbd, rf1, rf1_nhdplus, national_viz_simp),
-  plot_lps = get_lp_plots(plot_lps_data_all, 2)
+  plot_lps = get_lp_plots(plot_lps_data_all, 3)
   ##### NHDPlsuHR Stuff
   # nhdhr_hu02 = c("01", "02"),
   # nhdhr_dir = "data/hr",
