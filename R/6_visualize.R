@@ -363,8 +363,8 @@ get_lp_plots <- function(lp_plot_data, delay) {
   plotter <- function(i, bbox, lp_plot_data) {
     par(mar=c(0,0,0,0))
     plot(bbox)
-    plot(st_geometry(lp_plot_data$lp_data[[i]]), lwd = 2, col = "blue", add = TRUE)
     plot(st_geometry(lp_plot_data$wbd[[i]]), lwd = 1, col = "lightgrey", add = TRUE)
+    plot(st_geometry(lp_plot_data$lp_data[[i]]), lwd = 2, col = "blue", add = TRUE)
     plot(st_geometry(lp_plot_data$rf1[[i]]), lwd = 1.5, col = "red", add = TRUE)
   }
   
