@@ -1,5 +1,4 @@
 library(nhdplusTools)
-library(hyRefactor)
 library(sf)
 library(dplyr)
 library(HUCAgg)
@@ -12,6 +11,7 @@ library(R.utils)
 library(tidyr)
 library(igraph)
 library(readr)
+library(mainstems)
 
 source("R/1_download_data.R")
 source("R/2_fixes.R")
