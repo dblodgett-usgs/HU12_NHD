@@ -30,6 +30,7 @@ par_fun <- function(start_comid, net_atts, net_prep, wbd_atts, temp_dir) {
   return(out_file)
 }
 
+# returns the same thing as match_levelpaths
 get_hu_joiner <- function(net, wbd, simp, cores, temp_dir = "temp/", out_dir = "") {
   
   out_file <- file.path(out_dir, "map_joiner.csv")
