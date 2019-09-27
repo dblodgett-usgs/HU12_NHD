@@ -112,57 +112,6 @@ get_wbd <- function(wbd_gdb, fixes, prj) {
   return(wbd)
 }
 
-prep_net <- function(net, simp) {
-  
-  net_prep <- prepare_nhdplus(net, 
-                              min_network_size = 20, # sqkm
-                              min_path_length = 0, # sqkm
-                              min_path_size = 10, # sqkm
-                              purge_non_dendritic = TRUE,
-                              warn =  TRUE) %>%
-    left_join(select(net, COMID, DnLevelPat, AreaSqKM)) %>%
-    st_sf() %>%
-    group_by(LevelPathI) %>%
-    arrange(Hydroseq) %>%
-    mutate(DnLevelPat = DnLevelPat[1]) %>%
-    ungroup()
-  
-  net_prep["denTotalAreaSqKM"] <-
-    calculate_total_drainage_area(select(st_set_geometry(net_prep, NULL),
-                                         ID = COMID, toID = toCOMID,
-                                         area = AreaSqKM))
-  
-  net_prep <- st_simplify(net_prep, dTolerance = simp)
-  
-  return(net_prep)
-}
-
-get_process_data <- function(net, wbd, simp) {
-  
-  net_prep <- prep_net(net, simp)
-  
-  wbd <- select(st_simplify(wbd, dTolerance = simp), HUC12, TOHUC)
-  
-  net_prep <- st_join(net_prep, wbd) %>%
-    st_set_geometry(NULL)
-  
-  return(net_prep)
-}
-
-# Not used?
-load_nhd <- function(natdb, net_cache) {
-  message("loading NHD")
-  
-  if(file.exists(net_cache)) {
-    net <- readRDS(net_cache)
-  } else {
-    net <- read_sf(natdb, "NHDFlowline_Network") %>%
-      st_zm()
-    saveRDS(net, net_cache)
-  }
-  return(net)
-}
-
 clean_rf1 <- function(rf1) {
   from_to <- st_set_geometry(rf1, NULL) %>%
     filter(!TYPE %in% c("C", "G", "I", "L", "W", "X", "Z", "N")) %>%

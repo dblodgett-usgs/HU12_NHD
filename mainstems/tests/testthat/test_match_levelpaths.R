@@ -42,6 +42,15 @@ test_that("match levelpaths and get_linked_points", {
   linked_points <- get_linked_points(hu_lp, new_hope_flowline, wbd, exclude = c())
 
   expect_equal(nrow(linked_points), 8)
+  
+  new_hope_flowline$TerminalPa <- min(new_hope_flowline$LevelPathI)
+  
+  suppressWarnings(hu_lp_2 <- par_match_levelpaths(new_hope_flowline, wbd, 10, 1, 
+                                                   temp_dir = tempdir(), out_dir = tempdir()))
+  
+  expect_true(all(names(hu_lp) %in% names(hu_lp_2)))
+  
+  expect_true(nrow(hu_lp) == nrow(hu_lp_2))
 })
 
 test_that("match levelpaths runs 2279159", {

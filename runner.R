@@ -47,7 +47,7 @@ plan <- drake_plan(
   nhdplus_net_atts = st_set_geometry(nhdplus_net, NULL),
   ##### Match NHDPlusV2 with stable (old) WBD
   nhdplus_oldwbd_out = "nhdplus_oldwbd_out/",
-  nhdplus_oldwbd_hu_joiner = get_hu_joiner(nhdplus_net, nhdplus_wbd, proc_simp, cores, temp_dir, nhdplus_oldwbd_out),
+  nhdplus_oldwbd_hu_joiner = par_match_levelpaths(nhdplus_net, nhdplus_wbd, proc_simp, cores, temp_dir, nhdplus_oldwbd_out),
   nhdplus_oldwbd_lp_points = get_lp_points(nhdplus_oldwbd_hu_joiner, nhdplus_net, wbd, wbd_exclusions),
   nhdplus_oldwbd_na_outlet_coords = get_na_outlets_coords(nhdplus_oldwbd_lp_points, nhdplus_net),
   nhdplus_oldwbd_in_list = get_in_list(nhdplus_oldwbd_lp_points, nhdplus_net),
@@ -68,7 +68,7 @@ plan <- drake_plan(
   wbd = get_wbd(wbd_gdb_path, wbd_fixes, prj),
   ##### Match newest WBD to NHDPlusV2.
   nhdplus_newwbd_out = "nhdplus_newwbd_out/",
-  nhdplus_newwbd_hu_joiner = get_hu_joiner(nhdplus_net, wbd, proc_simp, cores, temp_dir, nhdplus_newwbd_out),
+  nhdplus_newwbd_hu_joiner = par_match_levelpaths(nhdplus_net, wbd, proc_simp, cores, temp_dir, nhdplus_newwbd_out),
   nhdplus_newwbd_lp_points = get_lp_points(nhdplus_newwbd_hu_joiner, nhdplus_net, wbd, wbd_exclusions),
   nhdplus_newwbd_na_outlet_coords = get_na_outlets_coords(nhdplus_newwbd_lp_points, nhdplus_net),
   nhdplus_newwbd_in_list = get_in_list(nhdplus_newwbd_lp_points, nhdplus_net),
@@ -111,7 +111,7 @@ plan <- drake_plan(
   # nhdhr = nhdhr_mod(nhdhr_path, file.path(nhdhr_dir, "nhdplushr.gpkg"), force_terminal = TRUE),
   # nhdhr_net = get_net(nhdhr, prj),
   # nhdplushr_newwbd_out = "nhdplushr_newwbd",
-  # nhdplushr_newwbd_hu_joiner = get_hu_joiner(nhdhr_net, wbd, proc_simp, cores, temp_dir, nhdplushr_newwbd_out),
+  # nhdplushr_newwbd_hu_joiner = par_match_levelpaths(nhdhr_net, wbd, proc_simp, cores, temp_dir, nhdplushr_newwbd_out),
   # nhdplushr_newwbd_linked_points = get_linked_points_scalable(nhdplushr_newwbd_hu_joiner, nhdhr_net, wbd, wbd_exclusions, cores,
   #                                                    file.path(nhdplushr_newwbd_out, "wbd_viz.gpkg")),
   # nhdplushr_newwbd_write = write_output_gpkg(nhdhr_net, wbd, nhdplushr_newwbd_hu_joiner, 

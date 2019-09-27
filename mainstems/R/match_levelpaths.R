@@ -392,3 +392,143 @@ correct_hu <- function(hu, fline_hu, funky_headwaters, add_checks) {
   }
   return(hu)
 }
+
+par_match_levelpaths_fun <- function(start_comid, net_atts, net_prep, wbd_atts, temp_dir) {
+  library(nhdplusTools)
+  library(hyRefactor)
+  library(sf)
+  library(dplyr)
+  
+  out_file <- file.path(temp_dir, paste0(start_comid, ".rds"))
+  
+  if(!file.exists(out_file)) {
+    
+    message(paste(Sys.time(), out_file, "\n"))
+    
+    all_comid <- get_UT(net_atts, start_comid)
+    
+    sub_net <- filter(net_prep, COMID %in% all_comid)
+    
+    out <- list(NULL)
+    
+    if(nrow(sub_net) > 0) {
+      sub_net <- bind_rows(sub_net,
+                           select(filter(wbd_atts,
+                                         !HUC12 %in% sub_net$HUC12),
+                                  HUC12, TOHUC))
+      
+      out <- list(match_levelpaths(sub_net, start_comid, add_checks = TRUE))
+    }
+    
+    saveRDS(out, out_file)
+  }
+  return(out_file)
+}
+
+#' Parallel match levelpaths
+#' @details Calls match_levelpaths in a parallel mode for use in large process workflows
+#' @param net NHDPlus network
+#' @param wbd WBD HU12 polygons
+#' @param simp simplification in units of WBD and NHDPlus to limit memory usage
+#' @param temp_dir directory to write temprary files to
+#' @param out_dir directory to check for cached output.
+#' @export
+par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_dir = "") {
+  
+  out_file <- file.path(out_dir, "map_joiner.csv")
+  
+  if(file.exists(out_file)) {
+    all <- readr::read_csv(out_file)
+  } else {
+    
+    unlink(temp_dir, recursive = TRUE)
+    
+    net_int <- get_process_data(net, wbd, simp)
+    
+    net <- st_set_geometry(net, NULL)[ ,1:40]
+    wbd <- st_set_geometry(wbd, NULL)
+    
+    terminals <- net %>%
+      select(TerminalPa) %>%
+      distinct() %>%
+      left_join(select(net, COMID, LevelPathI, Hydroseq), 
+                by = c("TerminalPa" = "LevelPathI")) %>%
+      filter(COMID %in% net_int$COMID) %>%
+      group_by(TerminalPa) %>%
+      filter(Hydroseq == min(Hydroseq))
+    
+    cl <- parallel::makeCluster(rep("localhost", cores), 
+                                type = "SOCK", 
+                                outfile = "hu_joiner.log")
+    
+    to_run <- terminals$COMID
+    
+    dir.create(temp_dir, showWarnings = FALSE)
+    already_run <- list.files(temp_dir, pattern = "*.rds")
+    already_run <- as.numeric(gsub(".rds", "", already_run))
+    
+    to_run <- to_run[!to_run %in% already_run]
+    
+    all_outlets <- snow::parLapply(cl, to_run, par_match_levelpaths_fun,
+                             net_atts = net,
+                             net_prep = net_int,
+                             wbd_atts = wbd,
+                             temp_dir = temp_dir)
+    
+    parallel::stopCluster(cl)
+    
+    out_files <- list.files(temp_dir, full.names = TRUE)
+    
+    all <- sapply(out_files, readRDS, USE.NAMES = TRUE)
+    
+    names(all) <- gsub(temp_dir, "", names(all))
+    names(all) <- gsub(".rds", "", names(all))
+    
+    all <- bind_rows(all)
+    
+    dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+    
+    readr::write_csv(all, out_file)
+    
+  }
+  
+  return(all)
+}
+
+get_process_data <- function(net, wbd, simp) {
+  
+  net_prep <- prep_net(net, simp)
+  
+  wbd <- select(st_simplify(wbd, dTolerance = simp), HUC12, TOHUC)
+  
+  net_prep <- st_join(net_prep, wbd) %>%
+    st_set_geometry(NULL)
+  
+  return(net_prep)
+}
+
+#' @import nhdplusTools sf dplyr
+prep_net <- function(net, simp) {
+  
+  net_prep <- prepare_nhdplus(net, 
+                              min_network_size = 20, # sqkm
+                              min_path_length = 0, # sqkm
+                              min_path_size = 10, # sqkm
+                              purge_non_dendritic = TRUE,
+                              warn =  TRUE) %>%
+    left_join(select(net, COMID, DnLevelPat, AreaSqKM), by = "COMID") %>%
+    st_sf() %>%
+    group_by(LevelPathI) %>%
+    arrange(Hydroseq) %>%
+    mutate(DnLevelPat = DnLevelPat[1]) %>%
+    ungroup()
+  
+  net_prep["denTotalAreaSqKM"] <-
+    nhdplusTools::calculate_total_drainage_area(select(st_set_geometry(net_prep, NULL),
+                                         ID = COMID, toID = toCOMID,
+                                         area = AreaSqKM))
+  
+  net_prep <- st_simplify(net_prep, dTolerance = simp)
+  
+  return(net_prep)
+}
