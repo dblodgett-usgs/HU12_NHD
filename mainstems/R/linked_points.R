@@ -171,7 +171,7 @@ get_points_out <- function(hu_lp, net, wbd, exclude) {
     net <- st_transform(net, st_crs(wbd))
   }
   
-  points <- setNames(lapply(X = lp_ids,
+  points <- setNames(pbapply::pblapply(X = lp_ids,
                             FUN = run_lp,
                             net = net, hu_lp = hu_lp, wbd = wbd),
                      lp_ids)
@@ -273,7 +273,7 @@ get_in_list <- function(lp_points, net) {
          hu_points = filter(lp_points, lp == lp_search))
   }
   
-  lapply(lp_list, in_list_fun, net = net, lp_points = lp_points)
+  pbapply::pblapply(lp_list, in_list_fun, net = net, lp_points = lp_points)
 }
 
 #' @export
