@@ -65,6 +65,7 @@ plan <- drake_plan(
   wbd_gdb_path = download_wbd(wbd_dir),
   wbd_exclusions = get_exclusions(wbd_gdb_path),
   wbd = get_wbd(wbd_gdb_path, wbd_fixes, prj),
+  hu02 = st_simplify(st_transform(read_sf(wbd_gdb_path, "WBDHU2"), prj), dTolerance = national_viz_simp),
   ##### Match newest WBD to NHDPlusV2.
   nhdplus_newwbd_out = "nhdplus_newwbd_out/",
   nhdplus_newwbd_hu_joiner = par_match_levelpaths(nhdplus_net, wbd, proc_simp, cores, temp_dir, nhdplus_newwbd_out),
@@ -102,7 +103,7 @@ plan <- drake_plan(
   plot_lps_data = get_lp_plot_data(nhdplus_net, mainstems_table_summary, national_viz_simp),
   plot_lps_data_wbd = get_lp_plot_data_wbd(plot_lps_data, nhdplus_wbd, nhdplus_oldwbd_linked_points, national_viz_simp),
   plot_lps_data_all = get_lp_plot_data_rf1(plot_lps_data_wbd, rf1, rf1_nhdplus, national_viz_simp),
-  plot_lps = get_lp_plots(plot_lps_data_all, 3)
+  plot_lps = get_lp_plots(plot_lps_data_all, 3, hu02, hu02_filter = "10")
   ##### NHDPlsuHR Stuff
   # nhdhr_hu02 = c("01", "02"),
   # nhdhr_dir = "data/hr",

@@ -359,19 +359,26 @@ get_lp_plot_data_rf1 <- function(pd, rf1, rf1_lp, super_simp) {
                           dat = rf1, ms_lp = ms)))
 }
 
-get_lp_plots <- function(lp_plot_data, delay) {
-  plotter <- function(i, bbox, lp_plot_data) {
+get_lp_plots <- function(lp_plot_data, delay, hu02, hu02_filter = NULL) {
+  
+  if(!is.null(hu02_filter)) {
+    lp_plot_data$bbox <- st_as_sfc(st_bbox(filter(hu02, HUC2 %in% hu02_filter)), crs = st_crs(hu02))
+  }
+  
+  plotter <- function(i, bbox, lp_plot_data, hu02) {
     par(mar=c(0,0,0,0))
-    plot(bbox)
+    plot(bbox, border = NA)
+    plot(st_geometry(hu02), lwd = 1, col = NA, add = TRUE)
     plot(st_geometry(lp_plot_data$wbd[[i]]), lwd = 1, col = "lightgrey", add = TRUE)
     plot(st_geometry(lp_plot_data$lp_data[[i]]), lwd = 2, col = "blue", add = TRUE)
     plot(st_geometry(lp_plot_data$rf1[[i]]), lwd = 1.5, col = "red", add = TRUE)
   }
   
   gifski::save_gif({
-    lapply(c(1:10), plotter, 
+    lapply(c(2:6), plotter, 
            bbox = lp_plot_data$bbox, 
-           lp_plot_data = lp_plot_data)
+           lp_plot_data = lp_plot_data, 
+           hu02 = hu02)
   }, 
   gif_file = "gif/big_animation.gif", 
   width = 2048, height = 1536, delay = delay)
