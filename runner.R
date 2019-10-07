@@ -18,7 +18,6 @@ source("R/3_setup.R")
 source("R/4_find_match.R")
 source("R/5_find_outlets.R")
 source("R/6_visualize.R")
-source("R/9_viz_plot.R")
 source("R/10_build_mainstems_table.R")
 
 plan <- drake_plan(
@@ -104,7 +103,8 @@ plan <- drake_plan(
   plot_lps_data = get_lp_plot_data(nhdplus_net, mainstems_table_summary, national_viz_simp),
   plot_lps_data_wbd = get_lp_plot_data_wbd(plot_lps_data, nhdplus_wbd, nhdplus_oldwbd_linked_points, national_viz_simp),
   plot_lps_data_all = get_lp_plot_data_rf1(plot_lps_data_wbd, rf1, rf1_nhdplus, national_viz_simp),
-  plot_lps = get_lp_plots(plot_lps_data_all, 3, hu02, hu02_filter = "10"),
+  plot_lps = get_lp_plots(plot_lps_data_all, 3, hu02, hu02_filter = "10",
+                          bb = c(xmin = -109.5, ymin = 40.5, xmax = -96.5, ymax = 48)),
   plot_hw = get_hw_fig()
   ##### NHDPlsuHR Stuff
   # nhdhr_hu02 = c("01", "02"),

@@ -25,36 +25,6 @@ get_hr_plot_data <- function(hr_net, lp, proj, simp_meters) {
     st_simplify(dTolerance = simp_meters)
 }
 
-get_hw_fig <- function() {
-  rf1 <- sf::read_sf(system.file("extdata/rf1_test.gpkg", package = "mainstems"), "rf1_test")
-  nhdp <- sf::read_sf(system.file("extdata/rf1_test.gpkg", package = "mainstems"), "nhdp_flowline")
-  hr <- nhdplusTools::download_nhdplushr("data/hr/", hu_list = "03")
-  hr <- nhdplusTools::get_nhdplushr(hr_dir = hr, out_gpkg = "data/0314.gpkg", pattern = "0314_HU4_GDB.gdb")
-  hr <- st_zm(read_sf(hr, "NHDFlowline"))
-  hr_outlet <- hr$HydroSeq[which(hr$GNIS_ID == "00288720" & hr$TerminalFl == 1)]
-  hr_sub <- hr[hr$TerminalPa == hr_outlet, ]
-  hr_sub <- st_transform(hr_sub, st_crs(nhdp))
-  
-  rf1_matches <- match_flowpaths(nhdp, rf1, hw_pairs)
-  lps <- unique(rf1_matches$mr_LevelPathI)[1:9]
-  
-  bb <- c(xmin = 789495, ymin = 876900, 
-          xmax = 794000, ymax = 898900)
-  class(bb) <- "bbox"
-  bb <- st_as_sfc(bb, crs = st_crs(nhdp))
-  
-  png("img/fig_hw.png", 500, 700)
-  par(mar = c(0,0,0,0))
-  plot(bb, border = NA)
-  plot(st_geometry(hr_sub), lwd = 3, add = TRUE)
-  plot(st_geometry(nhdp), lwd = 1.5, col = "blue", add = TRUE)
-  plot(st_geometry(filter(nhdp, LevelPathI == 290016401)),
-       col = "blue", lwd = 4, add = TRUE)
-  plot(st_geometry(filter(rf1, ID %in% filter(rf1_matches, mr_LevelPathI %in% 290016401)$member_ID)), 
-       col = "red", lwd = 3, add = TRUE)
-  dev.off()
-}
-
 create_plot_frames <- function(big_plot_data, v2_plot_data, 
                                hr_plot_data, matched_lp,
                                hr_vpu, wbd_hr, threads) {

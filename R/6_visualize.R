@@ -359,9 +359,13 @@ get_lp_plot_data_rf1 <- function(pd, rf1, rf1_lp, super_simp) {
                           dat = rf1, ms_lp = ms)))
 }
 
-get_lp_plots <- function(lp_plot_data, delay, hu02, hu02_filter = NULL) {
+get_lp_plots <- function(lp_plot_data, delay, hu02, hu02_filter = NULL, bb = NULL) {
   
-  if(!is.null(hu02_filter)) {
+  if(!is.null(bb))  {
+    class(bb) <- "bbox"
+    attributes(bb)$crs <- st_crs(4326)
+    lp_plot_data$bbox <- st_transform(st_as_sfc(bb, crs = st_crs(4326)), st_crs(hu02))
+  } else if(!is.null(hu02_filter)) {
     lp_plot_data$bbox <- st_as_sfc(st_bbox(filter(hu02, HUC2 %in% hu02_filter)), crs = st_crs(hu02))
   }
   
@@ -383,5 +387,44 @@ get_lp_plots <- function(lp_plot_data, delay, hu02, hu02_filter = NULL) {
   gif_file = "gif/big_animation.gif", 
   width = 2048, height = 1536, delay = delay)
   
+}
+
+get_hw_fig <- function() {
+  rf1 <- sf::read_sf(system.file("extdata/rf1_test.gpkg", package = "mainstems"), "rf1_test")
+  nhdp <- sf::read_sf(system.file("extdata/rf1_test.gpkg", package = "mainstems"), "nhdp_flowline")
+  hr <- nhdplusTools::download_nhdplushr("data/hr/", hu_list = "03")
+  hr <- nhdplusTools::get_nhdplushr(hr_dir = hr, out_gpkg = "data/0314.gpkg", pattern = "0314_HU4_GDB.gdb")
+  hr <- st_zm(read_sf(hr, "NHDFlowline"))
+  hr_outlet <- hr$HydroSeq[which(hr$GNIS_ID == "00288720" & hr$TerminalFl == 1)]
+  hr_sub <- hr[hr$TerminalPa == hr_outlet, ]
+  hr_sub <- st_transform(hr_sub, st_crs(nhdp))
+  
+  hw_pairs <- structure(list(ID = c(7849L, 7851L, 7853L, 7856L, 7857L, 7858L, 
+                                    7860L, 7862L, 7863L, 7864L), 
+                             FEATUREID = c(2171225L, 2171903L, 2171013L, 
+                                           2171859L, 2171883L, 2171917L, 
+                                           2172119L, 2171999L, 2172059L, 
+                                           2171563L)), 
+                        row.names = c(NA, -10L), 
+                        class = c("tbl_df", "tbl", "data.frame"))
+  
+  rf1_matches <- match_flowpaths(nhdp, rf1, hw_pairs)
+  lps <- unique(rf1_matches$mr_LevelPathI)[1:9]
+  
+  bb <- c(xmin = 789495, ymin = 876900, 
+          xmax = 794000, ymax = 898900)
+  class(bb) <- "bbox"
+  bb <- st_as_sfc(bb, crs = st_crs(nhdp))
+  
+  png("img/fig_hw.png", 500, 700)
+  par(mar = c(0,0,0,0))
+  plot(bb, border = NA)
+  plot(st_geometry(hr_sub), lwd = 3, add = TRUE)
+  plot(st_geometry(nhdp), lwd = 1.5, col = "blue", add = TRUE)
+  plot(st_geometry(filter(nhdp, LevelPathI == 290016401)),
+       col = "blue", lwd = 4, add = TRUE)
+  plot(st_geometry(filter(rf1, ID %in% filter(rf1_matches, mr_LevelPathI %in% 290016401)$member_ID)), 
+       col = "red", lwd = 3, add = TRUE)
+  dev.off()
 }
 
