@@ -12,6 +12,7 @@ library(tidyr)
 library(igraph)
 library(readr)
 library(mainstems)
+library(pbapply)
 
 source("R/2_fixes.R")
 source("R/3_setup.R")
@@ -104,20 +105,23 @@ plan <- drake_plan(
   plot_lps_data_wbd = get_lp_plot_data_wbd(plot_lps_data, nhdplus_wbd, nhdplus_oldwbd_linked_points, national_viz_simp),
   plot_lps_data_all = get_lp_plot_data_rf1(plot_lps_data_wbd, rf1, rf1_nhdplus, national_viz_simp),
   plot_lps = get_lp_plots(plot_lps_data_all, 3, hu02, hu02_filter = "10",
-                          bb = c(xmin = -109.5, ymin = 40.5, xmax = -96.5, ymax = 48)),
-  plot_hw = get_hw_fig()
+                          bb = c(xmin = -103.5, ymin = 44.5, xmax = -101.5, ymax = 47)),
+  plot_hw = get_hw_fig(),
   ##### NHDPlsuHR Stuff
-  # nhdhr_hu02 = c("01", "02"),
-  # nhdhr_dir = "data/hr",
-  # nhdhr_path = download_nhdhr(nhdhr_dir, nhdhr_hu02),
-  # nhdhr = nhdhr_mod(nhdhr_path, file.path(nhdhr_dir, "nhdplushr.gpkg"), force_terminal = TRUE),
-  # nhdhr_net = get_net(nhdhr, prj),
-  # nhdplushr_newwbd_out = "nhdplushr_newwbd",
-  # nhdplushr_newwbd_hu_joiner = par_match_levelpaths(nhdhr_net, wbd, proc_simp, cores, temp_dir, nhdplushr_newwbd_out),
-  # nhdplushr_newwbd_linked_points = get_linked_points_scalable(nhdplushr_newwbd_hu_joiner, nhdhr_net, wbd, wbd_exclusions, cores,
-  #                                                    file.path(nhdplushr_newwbd_out, "wbd_viz.gpkg")),
-  # nhdplushr_newwbd_write = write_output_gpkg(nhdhr_net, wbd, nhdplushr_newwbd_hu_joiner, 
-  #                                           nhdplus_oldwbd_linked_points, prj, viz_simp, nhdplushr_newwbd_out),
+  nhdhr_hu02 = c("01", "02", "03"),
+  nhdhr_dir = "data/hr",
+  nhdhr_path = download_nhdplushr(nhdhr_dir, nhdhr_hu02),
+  nhdhr_net = nhdhr_mod(nhdhr_path, file.path(nhdhr_dir, "nhdplushr.gpkg"), 
+                         min_size = 6, simp = 10, proj = prj, force_terminal = TRUE, fix_terminals = TRUE),
+  nhdplushr_newwbd_out = "nhdplushr_newwbd",
+  nhdplushr_newwbd_hu_joiner = par_match_levelpaths(nhdhr_net, wbd, proc_simp, 1, temp_dir, nhdplushr_newwbd_out),
+  nhdplushr_newwbd_lp_points = get_lp_points(nhdplushr_newwbd_hu_joiner, nhdhr_net, wbd, wbd_exclusions),
+  nhdplushr_newwbd_na_outlet_coords = get_na_outlets_coords(nhdplushr_newwbd_lp_points$na, nhdhr_net),
+  nhdplushr_newwbd_in_list = get_in_list(nhdplushr_newwbd_lp_points, nhdhr_net),
+  nhdplushr_newwbd_linked_points = get_linked_points_scalable(nhdplushr_newwbd_in_list, nhdplushr_newwbd_na_outlet_coords, 
+                                                              cores, file.path(nhdplushr_newwbd_out, "wbd_viz.gpkg")),
+  nhdplushr_newwbd_write = write_output_gpkg(nhdhr_net, wbd, nhdplushr_newwbd_hu_joiner,
+                                            nhdplus_oldwbd_linked_points, prj, viz_simp, nhdplushr_newwbd_out),
 )
 
 config <- drake_config(plan = plan,

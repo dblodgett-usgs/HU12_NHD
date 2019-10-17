@@ -240,11 +240,20 @@ get_na_outlets_coords <- function(na_points, net) {
   na_outlets <- filter(na_outlets, FromMeas == 0)
   
   na_outlet_coords <- st_coordinates(na_outlets) %>%
-    as.data.frame() %>%
-    group_by(L2) %>%
+    as.data.frame()
+  
+  if(!"L2" %in% names(na_outlet_coords)) {
+    na_outlet_coords <- rename(na_outlet_coords, g = L1)
+  } else {
+    na_outlet_coords <- rename(na_outlet_coords, g = L2) %>%
+      select(-L1)
+  }
+  
+  na_outlet_coords <- na_outlet_coords %>%
+    group_by(g) %>%
     filter(row_number() == n()) %>%
     ungroup() %>%
-    select(-L1, -L2) %>%
+    select(-g) %>%
     bind_cols(st_set_geometry(na_outlets, NULL)) %>%
     st_as_sf(coords = c("X", "Y"), crs = st_crs(na_outlets)) %>%
     rename(geom = geometry)

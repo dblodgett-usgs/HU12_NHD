@@ -445,7 +445,7 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_
     
     net_int <- get_process_data(net, wbd, simp)
     
-    net <- st_set_geometry(net, NULL)[ ,1:40]
+    net <- st_set_geometry(net, NULL)
     wbd <- st_set_geometry(wbd, NULL)
     
     terminals <- net %>%
@@ -457,9 +457,13 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_
       group_by(TerminalPa) %>%
       filter(Hydroseq == min(Hydroseq))
     
-    cl <- parallel::makeCluster(rep("localhost", cores), 
-                                type = "SOCK", 
-                                outfile = "hu_joiner.log")
+    if(cores > 1) {
+      cl <- parallel::makeCluster(rep("localhost", cores), 
+                                  type = "SOCK", 
+                                  outfile = "hu_joiner.log")
+    } else {
+      cl <- NULL
+    }
     
     to_run <- terminals$COMID
     
@@ -469,13 +473,14 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_
     
     to_run <- to_run[!to_run %in% already_run]
     
-    all_outlets <- snow::parLapply(cl, to_run, par_match_levelpaths_fun,
+    all_outlets <- pblapply(to_run, par_match_levelpaths_fun,
                              net_atts = net,
                              net_prep = net_int,
                              wbd_atts = wbd,
-                             temp_dir = temp_dir)
-    
-    parallel::stopCluster(cl)
+                             temp_dir = temp_dir, cl = cl)
+    if(!is.null(cl)) {
+      parallel::stopCluster(cl)
+    }
     
     out_files <- list.files(temp_dir, full.names = TRUE)
     
@@ -515,7 +520,7 @@ prep_net <- function(net, simp) {
                               min_path_length = 0, # sqkm
                               min_path_size = 10, # sqkm
                               purge_non_dendritic = TRUE,
-                              warn =  TRUE) %>%
+                              warn =  TRUE, error = FALSE) %>%
     left_join(select(net, COMID, DnLevelPat, AreaSqKM), by = "COMID") %>%
     st_sf() %>%
     group_by(LevelPathI) %>%

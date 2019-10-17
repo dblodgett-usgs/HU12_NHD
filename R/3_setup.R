@@ -1,3 +1,96 @@
+nhdhr_mod <- function(nhdhr_path, out_gpkg, min_size, simp, proj, force_terminal, fix_terminals = FALSE) {
+  
+  if(!file.exists(out_gpkg)){
+    gdbs <- do.call(c, sapply(nhdhr_path, list.files, 
+                              pattern = ".*[0-9][0-9][0-9][0-9].*.gdb$",
+                              full.names = TRUE, recursive = TRUE, 
+                              include.dirs = TRUE, USE.NAMES = FALSE))
+    
+    get_hr_data_fun <- function(hr_gdb, min_size, simp, proj) {
+      hr_data <- nhdplusTools:::get_hr_data(hr_gdb, "NHDFlowline")
+      
+      hr_data <- nhdplusTools:::rename_nhdplus(hr_data)
+      
+      hr_data <- st_simplify(st_transform(st_zm(hr_data), proj), dTolerance = simp)
+      
+      filter_data <- select(st_set_geometry(hr_data, NULL), LevelPathI, TotDASqKM) %>%
+        group_by(LevelPathI) %>%
+        filter(TotDASqKM == max(TotDASqKM)) %>%
+        ungroup() %>%
+        distinct() %>%
+        filter(TotDASqKM > min_size)
+      
+      hr_data <- hr_data[hr_data$LevelPathI %in% filter_data$LevelPathI, ]
+      
+      hr_data <- select(hr_data, -Permanent_Identifier, -FDate, -Resolution, GNIS_ID, 
+                        -GNIS_Name, LENGTHKM, REACHCODE, -FlowDir, -WBArea_Permanent_Identifier,
+                        FTYPE, -FCode, -MainPath, -InNetwork, VisibilityFilter, -Shape_Length, 
+                        COMID, VPUID, -Enabled, -Shape, StreamLeve, StreamOrde, StreamCalc, 
+                        FromNode, ToNode, Hydroseq, LevelPathI, Pathlength, TerminalPa, ArbolateSu, 
+                        Divergence, StartFlag, TerminalFl, UpLevelPat, UpHydroSeq, DnLevel, 
+                        DnLevelPat, DnHydroseq, DnMinorHyd, -DnDrainCou, FromMeas, ToMeas, 
+                        -RtnDiv, -Thinner, -VPUIn, -VPUOut, AreaSqKM, TotDASqKM, -DivDASqKm, 
+                        -MaxElevRaw, -MinElevRaw, -MaxElevSmo, -MinElevSmo, -Slope, -SlopeLenKm, 
+                        -ElevFixed, HWType,-HWNodeSqKm, -StatusFlag)
+    }
+    
+    hr_data <- pblapply(gdbs, get_hr_data_fun, min_size = 6, simp = simp, proj = proj)
+    hr_data <- do.call(rbind, hr_data)
+    hr_data <- st_sf(hr_data)
+    
+    terminals <- hr_data[hr_data$TerminalFl == 1, ]
+    
+    terminal_test <- hr_data$TerminalPa %in% terminals$TerminalPa
+    
+    if(fix_terminals) {
+      hr_data_null <- hr_data[!terminal_test, ]
+      
+      outlets <- st_set_geometry(hr_data_null, NULL) %>%
+        group_by(TerminalPa) %>%
+        filter(Hydroseq == min(Hydroseq)) %>%
+        select(Hydroseq, TerminalPa)
+      
+      for(term in unique(hr_data_null$TerminalPa)) {
+        hr_data$TerminalFl[hr_data$Hydroseq == term] <- 1
+        hr_data$TerminalPa[hr_data$TerminalPa == term] <- outlets$Hydroseq[outlets$TerminalPa == term]
+      }
+      
+    } else {
+      
+      warning(paste("Removing", sum(!terminal_test), 
+                    "flowlines that are missing terminal paths."))
+      
+      hr_data <- hr_data[terminal_test, ]
+    }
+    
+    hr_data <- hr_data[(hr_data$FTYPE != 566 & hr_data$TerminalFl != 1), ]
+    
+    if(force_terminal) {
+      t_atts <- select(st_set_geometry(hr_data, NULL), COMID, ToNode, FromNode, TerminalFl)
+      
+      t_atts <- left_join(t_atts, select(t_atts,
+                                         toCOMID = COMID,
+                                         FromNode),
+                          by = c("ToNode" = "FromNode"))
+      
+      na_t_atts <- filter(t_atts, is.na(t_atts$toCOMID) & TerminalFl == 0) 
+      
+      warning(paste("Found", nrow(na_t_atts), "broken outlets where no toNode and not terminal. Fixing."))
+      
+      hr_data$TerminalFl[which(hr_data$COMID %in% na_t_atts$COMID)] <- 1
+      
+      # out <- filter(hr_data, COMID %in% na_t_atts$COMID)
+      # 
+      # write_sf(out, "./bad.gpkg")
+    }
+    
+    write_sf(hr_data, layer = "NHDFlowline", dsn = out_gpkg)
+  } else {
+    hr_data <- read_sf(hr_data, layer = "NHDFlowline")
+  }
+  return(hr_data)
+}
+
 rename_hr_fl = function(hr_vpus) {
   new_names <- gsub("NHDPLUS_H_", "", gsub("_HU4_GDB", "", hr_vpus))
   
@@ -20,10 +113,10 @@ prep_nhdplushr <- function(hr_fline) {
   hr_fline$TerminalFl[which(is.na(hr_fline$toCOMID))] <- 1
   
   hr_fline <- prepare_nhdplus(hr_fline, 
-                                min_network_size = 0, 
-                                min_path_length = 0, 
-                                min_path_size = 0, 
-                                purge_non_dendritic = TRUE) %>%
+                              min_network_size = 0, 
+                              min_path_length = 0, 
+                              min_path_size = 0, 
+                              purge_non_dendritic = TRUE) %>%
     select(ID = COMID, toID = toCOMID, length = LENGTHKM) %>%
     left_join(select(hr_fline,
                      ID = NHDPlusID, area = AreaSqKm, nameID = GNIS_ID),
@@ -33,14 +126,14 @@ prep_nhdplushr <- function(hr_fline) {
   hr_fline["weight"] <- nhdplusTools::calculate_arbolate_sum(select(hr_fline, ID, toID, length))
   
   hr_fline <- left_join(hr_fline, 
-                          nhdplusTools::calculate_levelpaths(hr_fline), 
-                          by = "ID")
+                        nhdplusTools::calculate_levelpaths(hr_fline), 
+                        by = "ID")
   
   hr_fline <- left_join(hr_fline, 
-                          select(hr_fline, ID, 
-                                 down_topo_sort = topo_sort,
-                                 down_levelpath = levelpath), 
-                          by = c("toID" = "ID"))
+                        select(hr_fline, ID, 
+                               down_topo_sort = topo_sort,
+                               down_levelpath = levelpath), 
+                        by = c("toID" = "ID"))
   
   
   select(hr_fline, NHDPlusID = ID, 
