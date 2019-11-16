@@ -1,7 +1,7 @@
 post_proc <- function(v2_net, hr_net, matched_lp) {
   
   matched_lp <- matched_lp %>%
-    select(-headwater_COMID) %>%
+    select(mr_LevelPathI, member_NHDPlusID, Hydroseq) %>%
     distinct()
   
   v2_net <- filter(v2_net, LevelPathI %in% matched_lp$mr_LevelPathI)
@@ -10,11 +10,11 @@ post_proc <- function(v2_net, hr_net, matched_lp) {
   
   matched_lp <- left_join(matched_lp, 
                           select(st_set_geometry(hr_net, NULL), 
-                                 NHDPlusID, HydroSeq), 
+                                 NHDPlusID, hydroseq = HydroSeq), 
                           by = c("member_NHDPlusID" = "NHDPlusID"))
   
   outlets <- group_by(matched_lp, mr_LevelPathI) %>%
-    filter(HydroSeq == min(HydroSeq)) %>%
+    filter(Hydroseq == min(Hydroseq)) %>%
     ungroup() %>% select(outlet_NHDPlusID = member_NHDPlusID, mr_LevelPathI)
   
   matched_lp <- left_join(matched_lp, outlets, by = "mr_LevelPathI")

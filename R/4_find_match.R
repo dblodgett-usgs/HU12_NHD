@@ -52,7 +52,13 @@ par_hr_pairs <- function(x, prj, nhdplus_hw_outlets) {
   cats <- sf::st_transform(cats, prj)
   cats <- nhdplusTools:::rename_nhdplus(cats)
   
-  dplyr::filter(mainstems::get_hr_pair(nhdplus_hw_outlets, cats), 
+  pairs <- sf::st_set_geometry(
+    sf::st_join(nhdplus_hw_outlets,
+            dplyr::select(cats, FEATUREID),
+            join = sf::st_within),
+    NULL)
+  
+  dplyr::filter(pairs, 
                 !is.na(FEATUREID))
 }
 
