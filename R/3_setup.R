@@ -1,17 +1,21 @@
 nhdhr_mod <- function(nhdhr_path, out_gpkg, min_size, simp, proj, force_terminal, fix_terminals = FALSE) {
   
   if(!file.exists(out_gpkg)){
-    gdbs <- do.call(c, sapply(nhdhr_path, list.files, 
+    gdbs <- do.call(c, as.list(sapply(nhdhr_path, list.files, 
                               pattern = ".*[0-9][0-9][0-9][0-9].*.gdb$",
                               full.names = TRUE, recursive = TRUE, 
-                              include.dirs = TRUE, USE.NAMES = FALSE))
+                              include.dirs = TRUE, USE.NAMES = FALSE)))
     
     get_hr_data_fun <- function(hr_gdb, min_size, simp, proj) {
+      print(hr_gdb)
+      
       hr_data <- nhdplusTools:::get_hr_data(hr_gdb, "NHDFlowline")
       
       hr_data <- nhdplusTools:::rename_nhdplus(hr_data)
       
-      hr_data <- st_simplify(st_transform(st_zm(hr_data), proj), dTolerance = simp)
+      hr_data <- st_zm(hr_data)
+      hr_data <- st_transform(hr_data, proj)
+      hr_data <- st_simplify(hr_data, dTolerance = simp)
       
       filter_data <- select(st_set_geometry(hr_data, NULL), LevelPathI, TotDASqKM) %>%
         group_by(LevelPathI) %>%
@@ -86,7 +90,7 @@ nhdhr_mod <- function(nhdhr_path, out_gpkg, min_size, simp, proj, force_terminal
     
     write_sf(hr_data, layer = "NHDFlowline", dsn = out_gpkg)
   } else {
-    hr_data <- read_sf(hr_data, layer = "NHDFlowline")
+    hr_data <- read_sf(out_gpkg, layer = "NHDFlowline")
   }
   return(hr_data)
 }

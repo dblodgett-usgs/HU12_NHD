@@ -226,6 +226,8 @@ get_lp_points <- function(hu_lp, net, wbd, exclude) {
 #' @export
 get_na_outlets_coords <- function(na_points, net) {
   
+  na_points <- na_points$na
+  
   if(nrow(na_points) == 0) return(data.frame())
   
   na_outlets <- net %>%
@@ -287,6 +289,7 @@ get_in_list <- function(lp_points, net) {
 
 #' @export
 get_linked_points_scalable <- function(in_list, na_outlet_coords, cores = NA, check_file = NULL) {
+  na_outlet_coords <- na_outlet_coords
   
   if(!is.null(check_file) && file.exists(check_file)) {
     linked <- read_sf(check_file, "linked_points")

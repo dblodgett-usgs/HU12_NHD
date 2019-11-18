@@ -15,9 +15,7 @@ get_wbd_grouped <- function(wbd) {
     summarise(do_union = FALSE)
 }
 
-write_output_gpkg <- function(net, wbd, hu_joiner, points, prj, viz_simp, out_dir) {
-  
-  wbd_viz_gpkg <- file.path(out_dir, "wbd_viz.gpkg")
+write_output_gpkg <- function(net, wbd, hu_joiner, points, prj, viz_simp, wbd_viz_gpkg) {
   
   write_sf(wbd, wbd_viz_gpkg, "wbd_viz")
   
