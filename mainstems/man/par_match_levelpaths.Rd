@@ -5,7 +5,7 @@
 \title{Parallel match levelpaths}
 \usage{
 par_match_levelpaths(net, wbd, simp, cores, temp_dir = "temp/",
-  out_dir = "")
+  out_file = "temp.csv")
 }
 \arguments{
 \item{net}{NHDPlus network}

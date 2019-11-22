@@ -118,7 +118,7 @@ match_flowpaths <- function(source_flowline, target_flowline, hw_pair, cores = N
                                       function(x, fa) get_dwn(x, fa),
                                       fa = target_flowline, cl = cl))
     
-    lpt <- unnest(lpt)
+    lpt <- unnest(lpt, cols = c(member_ID))
     
     lps <- data.frame(headwater_COMID = hw_pair$FEATUREID)
     
@@ -131,7 +131,7 @@ match_flowpaths <- function(source_flowline, target_flowline, hw_pair, cores = N
                                          function(x, fa) get_DM(fa, x),
                                          fa = source_flowline, cl = cl))
     
-    lps <- unnest(lps)
+    lps <- unnest(lps, cols = c(member_COMID))
     
     # With all navigations downstream main we need to find the 
     # dominant downstream levelpath for each headwater location.

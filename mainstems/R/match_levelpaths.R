@@ -188,7 +188,7 @@ get_lp_hu <- function(fline_hu, start_comid) {
   return(data.frame(LevelPathI = names(lp_hu),
                     HUC12 = I(lp_hu),
                     stringsAsFactors = FALSE) %>%
-           tidyr::unnest())
+           tidyr::unnest(cols = c(HUC12)))
 }
 
 get_next_lp <- function(fline_hu, nlp_tracker) {
@@ -433,9 +433,7 @@ par_match_levelpaths_fun <- function(start_comid, net_atts, net_prep, wbd_atts, 
 #' @param temp_dir directory to write temprary files to
 #' @param out_dir directory to check for cached output.
 #' @export
-par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_dir = "") {
-  
-  out_file <- file.path(out_dir, "map_joiner.csv")
+par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_file = "temp.csv") {
   
   if(file.exists(out_file)) {
     all <- readr::read_csv(out_file)
@@ -490,8 +488,6 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_
     names(all) <- gsub(".rds", "", names(all))
     
     all <- bind_rows(all)
-    
-    dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
     
     readr::write_csv(all, out_file)
     

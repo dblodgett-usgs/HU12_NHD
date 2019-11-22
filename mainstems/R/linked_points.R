@@ -225,8 +225,7 @@ get_lp_points <- function(hu_lp, net, wbd, exclude) {
 
 #' @export
 get_na_outlets_coords <- function(na_points, net) {
-  
-  na_points <- na_points$na
+  if("na" %in% names(na_points)) na_points <- na_points$na
   
   if(nrow(na_points) == 0) return(data.frame())
   

@@ -46,7 +46,8 @@ test_that("match levelpaths and get_linked_points", {
   new_hope_flowline$TerminalPa <- min(new_hope_flowline$LevelPathI)
   
   suppressWarnings(hu_lp_2 <- par_match_levelpaths(new_hope_flowline, wbd, 10, 1, 
-                                                   temp_dir = tempdir(), out_dir = tempdir()))
+                                                   temp_dir = tempdir(), 
+                                                   out_file = file.path(tempdir(), "temp.csv")))
   
   expect_true(all(names(hu_lp) %in% names(hu_lp_2)))
   
