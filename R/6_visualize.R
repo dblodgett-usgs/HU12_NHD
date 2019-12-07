@@ -17,6 +17,8 @@ get_wbd_grouped <- function(wbd) {
 
 write_output_gpkg <- function(net, wbd, hu_joiner, points, prj, viz_simp, wbd_viz_gpkg) {
   
+  if(names(net) == "NHDFlowline") net <- net$NHDFlowline
+  
   write_sf(wbd, wbd_viz_gpkg, "wbd_viz")
   
   write_sf(st_simplify(st_transform(net, prj), 

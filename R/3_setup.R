@@ -1,4 +1,5 @@
-nhdhr_mod <- function(nhdhr_path, out_gpkg, min_size, simp, proj, force_terminal, fix_terminals = FALSE) {
+nhdhr_mod <- function(nhdhr_path, out_gpkg, min_size, simp, proj, 
+                      force_terminal, fix_terminals = FALSE) {
   
   if(!file.exists(out_gpkg)){
     gdbs <- do.call(c, as.list(sapply(nhdhr_path, list.files, 
@@ -49,13 +50,15 @@ nhdhr_mod <- function(nhdhr_path, out_gpkg, min_size, simp, proj, force_terminal
     if(fix_terminals) {
       hr_data_null <- hr_data[!terminal_test, ]
       
+      # outlets are the lowest hydrosequence on non-terminal flagged outlets
       outlets <- st_set_geometry(hr_data_null, NULL) %>%
         group_by(TerminalPa) %>%
         filter(Hydroseq == min(Hydroseq)) %>%
         select(Hydroseq, TerminalPa)
       
       for(term in unique(hr_data_null$TerminalPa)) {
-        hr_data$TerminalFl[hr_data$Hydroseq == term] <- 1
+        term_hydroseq <- outlets$Hydroseq[outlets$TerminalPa == term]
+        hr_data$TerminalFl[hr_data$Hydroseq == term_hydroseq] <- 1
         hr_data$TerminalPa[hr_data$TerminalPa == term] <- outlets$Hydroseq[outlets$TerminalPa == term]
       }
       

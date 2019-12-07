@@ -56,6 +56,8 @@
 
 get_linked_points <- function(hu_lp, net, wbd, exclude, cores = NA) {
   
+  if("NHDFlowline" %in% names(net)) net <- net$NHDFlowline
+  
   lp_points <- get_lp_points(hu_lp, net, wbd, exclude)
     
   na_points <- lp_points$na
@@ -199,6 +201,8 @@ get_lp_hu_points <- function(points, prj) {
 
 #' @export
 get_lp_points <- function(hu_lp, net, wbd, exclude) {
+  if("NHDFlowline" %in% names(net)) net <- net$NHDFlowline
+  
   lp_points <- get_points_out(hu_lp, net, wbd, exclude) %>%
     get_lp_hu_points(st_crs(wbd)) %>%
     filter(!hu12 %in% exclude) %>%
@@ -269,6 +273,9 @@ get_na_outlets_coords <- function(na_points, net) {
 
 #' @export
 get_in_list <- function(lp_points, net) {
+  
+  if(names(net) == "NHDFlowline") net <- net$NHDFlowline
+  
   lp_points <- lp_points$lp
   
   lp_list <- unique(lp_points$lp)
@@ -290,7 +297,7 @@ get_in_list <- function(lp_points, net) {
 get_linked_points_scalable <- function(in_list, na_outlet_coords, cores = NA, check_file = NULL) {
   na_outlet_coords <- na_outlet_coords
   
-  if(!is.null(check_file) && file.exists(check_file)) {
+  if(!is.null(check_file) && file.exists(check_file) && "linked_points" %in% sf::st_layers(check_file)$name) {
     linked <- read_sf(check_file, "linked_points")
   } else {
     

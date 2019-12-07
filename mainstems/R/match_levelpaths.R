@@ -435,6 +435,8 @@ par_match_levelpaths_fun <- function(start_comid, net_atts, net_prep, wbd_atts, 
 #' @export
 par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_file = "temp.csv") {
   
+  if(names(net) == "NHDFlowline") net <- net$NHDFlowline
+  
   if(file.exists(out_file)) {
     all <- readr::read_csv(out_file)
   } else {

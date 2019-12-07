@@ -1,7 +1,8 @@
 source("sourcer.R")
 hr_hu02 <- c("01", "02", "03", "07", "08", "05", "06", "10", 
         "11", "17", "12", "13", "14", "15", "16", "18")
-hr_dir <- "data/hr"
+hr_hu02 <- c("10")
+hr_dir <- "data/hr/"
 out <- "nhdplushr_newwbd"
 
 plan <- drake_plan(
@@ -25,9 +26,10 @@ plan <- drake_plan(
   hu02 = st_simplify(st_transform(read_sf(wbd_gdb_path, "WBDHU2"), prj), dTolerance = national_viz_simp),
   hr_path = target(download_nhdplushr(hr_dir, hr_huset),
                       transform = map(hr_huset = !!hr_hu02)),
-  hr_net = target(nhdhr_mod(hr_path, 
-                               !!file.path(hr_dir, sprintf("%s.gpkg", .id_chr)), 
-                               min_size = 6, simp = 10, proj = prj, force_terminal = TRUE, fix_terminals = TRUE),
+  hr_net = target(get_nhdplushr(hr_path, 
+                               !!file.path(hr_dir, sprintf("%s.gpkg", .id_chr)), layers = "NHDFlowline",
+                               patter = ".*[0-9][0-9][0-9][0-9].gdb$", min_size_sqkm = 6, simp = 2, 
+                               proj = prj, check_terminals = TRUE),
                      transform = map(hr_path)),
   hu_joiner = target(par_match_levelpaths(hr_net, wbd, proc_simp, 1, temp_dir, 
                                           !!file.path(out, sprintf("joiner_%s.csv", .id_chr))),
