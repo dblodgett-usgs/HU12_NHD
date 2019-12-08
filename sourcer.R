@@ -1,6 +1,3 @@
-try(system("module purge"))
-try(system("module load gdal/2.4.1-gcc71 gcc/7.1.0 gis/geos-3.5.0 module load proj/4.9.2-gcc6.1.0 tools/udunits-2.2.16-gnu"))
-
 cran_packages <- c("sf", "dplyr", "drake", "snow", "xml2", 
                    "readr", "R.utils", "tidyr", # "rmapshaper"
                    "readr", "pbapply", "remotes")
