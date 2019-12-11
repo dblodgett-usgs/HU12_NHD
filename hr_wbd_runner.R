@@ -28,7 +28,7 @@ plan <- drake_plan(
                       transform = map(hr_huset = !!hr_hu02)),
   hr_net = target(get_nhdplushr(hr_path, 
                                !!file.path(hr_dir, sprintf("%s.gpkg", .id_chr)), layers = "NHDFlowline",
-                               patter = ".*[0-9][0-9][0-9][0-9].gdb$", min_size_sqkm = 6, simp = 2, 
+                               patter = ".*[0-9][0-9][0-9][0-9].*.gdb$", min_size_sqkm = 6, simp = 2, 
                                proj = prj, check_terminals = TRUE),
                      transform = map(hr_path)),
   hu_joiner = target(par_match_levelpaths(hr_net, wbd, proc_simp, 1, temp_dir, 
