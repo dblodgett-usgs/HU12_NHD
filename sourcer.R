@@ -1,6 +1,6 @@
 cran_packages <- c("sf", "dplyr", "drake", "snow", "xml2", 
                    "readr", "R.utils", "tidyr", # "rmapshaper"
-                   "readr", "pbapply", "remotes")
+                   "readr", "pbapply", "remotes", "future")
 
 usgs_r_github_packages <- c("nhdplusTools", "HUCAgg")
 
