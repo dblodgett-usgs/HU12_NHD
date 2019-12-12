@@ -62,6 +62,8 @@ config <- drake_config(plan = plan,
                        parallelism = "future", 
                        jobs = 2)
 
+future::plan(future::multiprocess)
+
 make(config = config)
 
 all_outlets <- do.call(rbind, lapply(hr_hu02, function(x) {
