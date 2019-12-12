@@ -1,9 +1,17 @@
 source("sourcer.R")
+source("R/3_setup.R")
+source("R/4_find_match.R")
+source("R/5_find_outlets.R")
+source("R/6_visualize.R")
+source("R/10_build_mainstems_table.R")
 hr_hu02 <- c("01", "02", "03", "07", "08", "05", "06", "10", 
         "11", "17", "12", "13", "14", "15", "16", "18")
 # hr_hu02 <- c("06")
 hr_dir <- "data/hr/"
 out <- "nhdplushr_newwbd"
+
+fixes <- read_csv("fixes/hu_fixes.csv") %>%
+  bind_rows(list(HUC12 = "180102040904", TOHUC = "180102041003", comment = "misdirected"))
 
 plan <- drake_plan(
   ##### Constants
@@ -19,7 +27,7 @@ plan <- drake_plan(
   wbd_gdb_file = "WBD_National_GDB.gdb",
   wbd_url = "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/WBD/National/GDB/NATIONAL_WBD_GDB.zip",
   ##### Static dependencies for newest WBD
-  wbd_fixes = get_fixes("latest"),
+  wbd_fixes = fixes,
   wbd_gdb_path = download_wbd(wbd_dir, url = wbd_url),
   wbd_exclusions = get_exclusions(wbd_gdb_path),
   wbd = get_wbd(wbd_gdb_path, wbd_fixes, prj),
