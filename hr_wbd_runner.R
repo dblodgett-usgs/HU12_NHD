@@ -38,21 +38,21 @@ plan <- drake_plan(
                                !!file.path(hr_dir, sprintf("%s.gpkg", .id_chr)), layers = "NHDFlowline",
                                patter = ".*[0-9][0-9][0-9][0-9].*.gdb$", min_size_sqkm = 6, simp = 2, 
                                proj = prj, check_terminals = TRUE),
-                     transform = map(hr_path)),
+                     transform = map(hr_path), hpc = TRUE),
   hu_joiner = target(par_match_levelpaths(hr_net, wbd, proc_simp, 1, temp_dir, 
                                           !!file.path(out, sprintf("joiner_%s.csv", .id_chr))),
-                     transform = map(hr_net)),
+                     transform = map(hr_net), hpc = TRUE),
   lp_points = target(get_lp_points(hu_joiner, hr_net, wbd, wbd_exclusions),
-                     transform = map(hu_joiner, hr_net)),
+                     transform = map(hu_joiner, hr_net), hpc = TRUE),
   na_ol = target(get_na_outlets_coords(lp_points, hr_net),
-                            transform = cross(lp_points)),
+                            transform = cross(lp_points), hpc = TRUE),
   in_list = target(get_in_list(lp_points, hr_net),
-                   transform = cross(lp_points)),
+                   transform = cross(lp_points), hpc = TRUE),
   lp = target(get_linked_points_scalable(in_list, na_ol, cores, !!file.path(out, sprintf("%s.gpkg", hr_hu02))),
-              transform = map(in_list, na_ol, hr_hu02 = !!hr_hu02)),
+              transform = map(in_list, na_ol, hr_hu02 = !!hr_hu02), hpc = TRUE),
   write = target(write_output_gpkg(hr_net, wbd, hu_joiner, lp, prj, viz_simp,
                                    file_out(!!file.path(out, sprintf("%s.gpkg", hr_hu02)))),
-                 transform = map(hr_net, hu_joiner, lp, hr_hu02 = !!hr_hu02))
+                 transform = map(hr_net, hu_joiner, lp, hr_hu02 = !!hr_hu02), hpc = TRUE)
 )
 
 
@@ -60,7 +60,7 @@ config <- drake_config(plan = plan,
                        memory_strategy = "autoclean",
                        garbage_collection = TRUE,
                        parallelism = "future", 
-                       jobs = 8)
+                       jobs = 2)
 
 make(config = config)
 
