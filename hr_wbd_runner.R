@@ -1,4 +1,4 @@
-source("sourcer.R")
+source("R/setup.R")
 source("R/3_setup.R")
 source("R/4_find_match.R")
 source("R/5_find_outlets.R")
@@ -6,12 +6,13 @@ source("R/6_visualize.R")
 source("R/10_build_mainstems_table.R")
 hr_hu02 <- c("01", "02", "03", "07", "08", "05", "06", "10", 
         "11", "17", "12", "13", "14", "15", "16", "18")
-# hr_hu02 <- c("06")
+# hr_hu02 <- c("10")
 hr_dir <- "data/hr/"
 out <- "nhdplushr_newwbd"
 
 fixes <- read_csv("fixes/hu_fixes.csv") %>%
   bind_rows(list(HUC12 = "180102040904", TOHUC = "180102041003", comment = "misdirected"))
+
 
 plan <- drake_plan(
   ##### Constants
@@ -38,7 +39,7 @@ plan <- drake_plan(
                                !!file.path(hr_dir, sprintf("%s.gpkg", .id_chr)), layers = "NHDFlowline",
                                patter = ".*[0-9][0-9][0-9][0-9].*.gdb$", min_size_sqkm = 6, simp = 2, 
                                proj = prj, check_terminals = TRUE),
-                     transform = map(hr_path), hpc = TRUE),
+                     transform = map(hr_path), hpc = FALSE),
   hu_joiner = target(par_match_levelpaths(hr_net, wbd, proc_simp, 1, temp_dir, 
                                           !!file.path(out, sprintf("joiner_%s.csv", .id_chr))),
                      transform = map(hr_net), hpc = TRUE),
@@ -58,11 +59,7 @@ plan <- drake_plan(
 
 config <- drake_config(plan = plan,
                        memory_strategy = "autoclean",
-                       garbage_collection = TRUE,
-                       parallelism = "future", 
-                       jobs = 2)
-
-future::plan(future::multiprocess)
+                       garbage_collection = TRUE)
 
 make(config = config)
 

@@ -1,5 +1,9 @@
-source("sourcer.R")
-
+source("R/setup.R")
+source("R/3_setup.R")
+source("R/4_find_match.R")
+source("R/5_find_outlets.R")
+source("R/6_visualize.R")
+source("R/10_build_mainstems_table.R")
 plan <- drake_plan(
   ##### Constants
   cores = 3,
