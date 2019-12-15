@@ -20,7 +20,7 @@ cores <- NA
 prj <- 5070
 min_size_sqkm <- 6
 proc_simp <- 2
-temp_dir <- "temp/"
+temp_dir <- paste0("temp", hr_hu02, "/")
 wbd_dir <- "data/wbd"
 wbd_url <- "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/WBD/National/GDB/NATIONAL_WBD_GDB.zip"
 
@@ -36,10 +36,10 @@ plan <- drake_plan(
                                pattern = ".*[0-9][0-9][0-9][0-9].*.gdb$", 
                                min_size_sqkm = min_size_sqkm, simp = proc_simp, 
                                proj = prj, check_terminals = TRUE),
-                     transform = map(hr_path, .id = FALSE)),
+                     transform = map(hr_path, .id = FALSE), hpc = FALSE),
   hu_joiner = target(par_match_levelpaths(hr_net, wbd, proc_simp, 1, temp_dir, 
                                           !!file.path(out, sprintf("joiner_%s.csv", .id_chr))),
-                     transform = map(hr_net, prep_data, .id = FALSE), hpc = TRUE),
+                     transform = map(hr_net, prep_data, temp_dir = !!temp_dir, .id = FALSE), hpc = TRUE),
   lp_points = target(get_lp_points(hu_joiner, hr_net, wbd, wbd_exclusions),
                      transform = map(hu_joiner, hr_net, .id = FALSE), hpc = TRUE),
   na_ol = target(get_na_outlets_coords(lp_points, hr_net),
@@ -52,7 +52,6 @@ plan <- drake_plan(
                                    file_out(!!file.path(out, sprintf("%s.gpkg", hr_hu02)))),
                  transform = map(hr_net, hu_joiner, lp, hr_hu02 = !!hr_hu02,.id = FALSE), hpc = TRUE)
 )
-
 
 config <- drake_config(plan = plan,
                        memory_strategy = "autoclean",
