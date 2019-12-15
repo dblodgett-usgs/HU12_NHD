@@ -395,7 +395,6 @@ correct_hu <- function(hu, fline_hu, funky_headwaters, add_checks) {
 
 par_match_levelpaths_fun <- function(start_comid, net_atts, net_prep, wbd_atts, temp_dir) {
   library(nhdplusTools)
-  library(hyRefactor)
   library(sf)
   library(dplyr)
   
@@ -433,7 +432,7 @@ par_match_levelpaths_fun <- function(start_comid, net_atts, net_prep, wbd_atts, 
 #' @param temp_dir directory to write temprary files to
 #' @param out_dir directory to check for cached output.
 #' @export
-par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_file = "temp.csv") {
+par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_file = "temp.csv", net_int = NULL) {
   
   if(names(net) == "NHDFlowline") net <- net$NHDFlowline
   
@@ -443,7 +442,9 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_
     
     unlink(temp_dir, recursive = TRUE)
     
-    net_int <- get_process_data(net, wbd, simp)
+    if(is.null(net_int)) {
+      net_int <- get_process_data(net, wbd, simp)
+    }
     
     net <- st_set_geometry(net, NULL)
     wbd <- st_set_geometry(wbd, NULL)
@@ -499,6 +500,8 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_
 }
 
 get_process_data <- function(net, wbd, simp) {
+  
+  if(names(net) == "NHDFlowline") net <- net$NHDFlowline
   
   net_prep <- prep_net(net, simp)
   
