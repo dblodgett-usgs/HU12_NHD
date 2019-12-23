@@ -10,7 +10,7 @@ test_that("match flowpaths runs", {
   
   hr_flowline$TerminalPa <- 15000500003272
   
-  hr_catchment <- nhdplusTools:::rename_nhdplus(hr_catchment)
+  hr_catchment <- align_nhdplus_names(hr_catchment)
   suppressWarnings(hw_pair <- sf::st_join(get_hw_points(new_hope_flowline),
                                           dplyr::select(hr_catchment, FEATUREID),
                                           join = sf::st_within) %>%

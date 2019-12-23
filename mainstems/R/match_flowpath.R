@@ -67,13 +67,13 @@ clean_geom <- function(x) {
 #' @importFrom sf st_join st_set_geometry st_within
 #' @importFrom tidyr unnest
 #' @importFrom dplyr select distinct  left_join bind_rows
-#' @importFrom nhdplusTools get_DM
+#' @importFrom nhdplusTools get_DM align_nhdplus_names
 #' @importFrom pbapply pblapply pboptions
 #' @examples
 #' source(system.file("extdata/nhdplushr_data.R", package = "mainstems"))
 #' source(system.file("extdata/new_hope_data.R", package = "nhdplusTools"))
 #'
-#' hr_catchment <- nhdplusTools:::rename_nhdplus(hr_catchment)
+#' hr_catchment <- nhdplusTools::align_nhdplus_names(hr_catchment)
 #' hw_pair <- sf::st_set_geometry(sf::st_join(get_hw_points(new_hope_flowline),
 #'                               dplyr::select(hr_catchment, FEATUREID),
 #'                               join = sf::st_within), NULL)
@@ -93,7 +93,7 @@ clean_geom <- function(x) {
 #'
 match_flowpaths <- function(source_flowline, target_flowline, hw_pair, cores = NA) {
 
-  source_flowline <- nhdplusTools:::rename_nhdplus(source_flowline)
+  source_flowline <- align_nhdplus_names(source_flowline)
   source_flowline <- clean_geom(source_flowline)
   target_flowline <- clean_geom(target_flowline)
   
@@ -180,8 +180,11 @@ match_flowpaths <- function(source_flowline, target_flowline, hw_pair, cores = N
   } else {
 
   target_flowline <- select(clean_geom(target_flowline),
-                            NHDPlusID, HydroSeq, DnHydroSeq, 
-                            LevelPathI, DnLevelPat)
+                            NHDPlusID = COMID, 
+                            HydroSeq = Hydroseq, 
+                            DnHydroSeq = DnHydroseq, 
+                            LevelPathI = LevelPathI, 
+                            DnLevelPat = DnLevelPat)
   
   gc()
 

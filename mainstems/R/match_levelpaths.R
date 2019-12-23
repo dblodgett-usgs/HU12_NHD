@@ -158,7 +158,7 @@ get_lp_hu <- function(fline_hu, start_comid) {
       none_count <- none_count + 1
     }
 
-    if(length(next_lp) == 0 | none_count > 5 | keep_going) { # If on the last nlp next_lp will be empty.
+    if(length(next_lp) == 0 | none_count > 5 | (keep_going & length(next_lp) == 0)) { # If on the last nlp next_lp will be empty.
 
       keep_going <- FALSE
 

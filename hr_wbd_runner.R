@@ -8,7 +8,10 @@ source("R/10_build_mainstems_table.R")
 hr_hu02 <- c("01", "02", "03", "07", "08", "05", "06", "10", 
         "11", "17", "12", "13", "14", "15", "16", "18")
 
-# hr_hu02 <- c("10")
+hr_hu02 <- c("03")
+
+pattern <- ".*[0-9][0-9][0-9][0-9].*.gdb$"
+pattern <- ".*0306.*.gdb"
 
 hr_dir <- "data/hr/"
 out <- "nhdplushr_newwbd"
@@ -33,12 +36,14 @@ plan <- drake_plan(
   hr_net = target(get_nhdplushr(hr_path, 
                                !!file.path(hr_dir, sprintf("%s.gpkg", .id_chr)), 
                                layers = "NHDFlowline",
-                               pattern = ".*[0-9][0-9][0-9][0-9].*.gdb$", 
+                               pattern = pattern, 
                                min_size_sqkm = min_size_sqkm, simp = proc_simp, 
                                proj = prj, check_terminals = TRUE),
                      transform = map(hr_path, .id = FALSE), hpc = FALSE),
+  net_int = mainstems:::get_process_data(hr_net[["NHDFlowline"]], wbd, proc_simp),
   hu_joiner = target(par_match_levelpaths(hr_net, wbd, proc_simp, 1, temp_dir, 
-                                          !!file.path(out, sprintf("joiner_%s.csv", .id_chr))),
+                                          !!file.path(out, sprintf("joiner_%s.csv", .id_chr)),
+                                          net_int),
                      transform = map(hr_net, prep_data, temp_dir = !!temp_dir, .id = FALSE), hpc = TRUE),
   lp_points = target(get_lp_points(hu_joiner, hr_net, wbd, wbd_exclusions),
                      transform = map(hu_joiner, hr_net, .id = FALSE), hpc = TRUE),
@@ -55,11 +60,7 @@ plan <- drake_plan(
 
 config <- drake_config(plan = plan,
                        memory_strategy = "autoclean",
-                       garbage_collection = TRUE,
-                       parallelism = "future", 
-                       jobs = 8)
-
-future::plan(future::multiprocess)
+                       garbage_collection = TRUE)
 
 make(config = config)
 
@@ -71,8 +72,8 @@ all_outlets <- st_transform(all_outlets, "+proj=longlat +datum=WGS84 +no_defs")
 names(all_outlets)[1] <- "NHDPlusID"
 write_sf(all_outlets, file.path(out, "all_outlets.gpkg"))
 
-all_joiner <- do.call(rbind, lapply(hr_hu02, function(x) {
-  read_csv(file.path(out, paste0("joiner_hu_joiner_hr_net_hr_path_", x, ".csv")))
+all_joiner <- do.call(rbind, lapply(c("", paste0("_", c(2:length(hr_hu02)))), function(x) {
+  read_csv(file.path(out, paste0("joiner_hu_joiner", x, ".csv")))
 }))
 
 all_joiner <- write_csv(all_joiner, file.path(out, "all_joiner.csv"))

@@ -133,6 +133,8 @@ test_that("match levelpaths 10055266", {
   matched <- match_levelpaths(readRDS("data/match_levelpaths_10055266.rds"), 10055266, add_checks = TRUE)
   expect_true(all(matched$head_HUC12[matched$corrected_LevelPathI == 200011667] == "020802010601"))
 
+  expect_equal(nrow(matched), 296)
+  
   huc12 <- dplyr::select(matched, levelpath = corrected_LevelPathI, head_huc12 = head_HUC12, outlet_huc12 = outlet_HUC12) %>%
     dplyr::filter(!is.na(outlet_huc12)) %>%
     dplyr::distinct()
