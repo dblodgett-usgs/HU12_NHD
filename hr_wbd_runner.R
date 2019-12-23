@@ -8,10 +8,9 @@ source("R/10_build_mainstems_table.R")
 hr_hu02 <- c("01", "02", "03", "07", "08", "05", "06", "10", 
         "11", "17", "12", "13", "14", "15", "16", "18")
 
-hr_hu02 <- c("03")
+# hr_hu02 <- c("03")
 
 pattern <- ".*[0-9][0-9][0-9][0-9].*.gdb$"
-pattern <- ".*0306.*.gdb"
 
 hr_dir <- "data/hr/"
 out <- "nhdplushr_newwbd"
@@ -60,7 +59,11 @@ plan <- drake_plan(
 
 config <- drake_config(plan = plan,
                        memory_strategy = "autoclean",
-                       garbage_collection = TRUE)
+                       garbage_collection = TRUE, 
+                       parallelism = "future", 
+                       jobs = 8)
+
+future::plan(future::multiprocess)
 
 make(config = config)
 
