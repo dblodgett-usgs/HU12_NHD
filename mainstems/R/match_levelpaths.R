@@ -28,7 +28,7 @@ match_levelpaths <- function(fline_hu, start_comid, add_checks = FALSE) {
   hu <- get_lp_hu(fline_hu, start_comid)
 
   if(nrow(hu) == 0) {
-    warning(paste("No matches found for", start_comid))
+    warning(paste("No matches found for", start_comid, "\n"))
     return(NULL)
   }
 
@@ -159,7 +159,7 @@ get_lp_hu <- function(fline_hu, start_comid) {
     }
 
     if(length(next_lp) == 0 | none_count > 5 | (keep_going & length(next_lp) == 0)) { # If on the last nlp next_lp will be empty.
-
+      
       keep_going <- FALSE
 
       next_lp <- get_next_lp(fline_hu, nlp_tracker)
@@ -245,7 +245,7 @@ trace_hu_network <- function(hu, outlet_hu, fline_hu) {
           # No test for this, but it shouldn't happen so throw error!!
           if(nrow(top_cat) > 1) {
             warning(paste("something very wrong with headwaters around HUC",
-                          lp$head_HUC12[1], "and levelpath", lp$intersected_LevelPathI[1]))
+                          lp$head_HUC12[1], "and levelpath", lp$intersected_LevelPathI[1]), "\n")
             funky_headwaters <- c(funky_headwaters, top_cat$HUC12)
             main_stem <- c()
           } else if(nrow(top_cat) == 0) {
@@ -401,9 +401,7 @@ par_match_levelpaths_fun <- function(start_comid, net_atts, net_prep, wbd_atts, 
   out_file <- file.path(temp_dir, paste0(start_comid, ".rds"))
   
   if(!file.exists(out_file)) {
-    
-    message(paste(Sys.time(), out_file, "\n"))
-    
+
     all_comid <- get_UT(net_atts, start_comid)
     
     sub_net <- filter(net_prep, COMID %in% all_comid)
@@ -491,6 +489,32 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_
     names(all) <- gsub(".rds", "", names(all))
     
     all <- bind_rows(all)
+    
+    # Once everything is done there are some orphans where only one
+    # matching network element was found. We can just add those.
+    missed <- net_int %>%
+      filter(!HUC12 %in% all$HUC12) %>%
+      group_by(HUC12)
+    
+    add_match <- missed %>%
+      filter(n() == 1) %>%
+      ungroup()
+    
+    missed <- missed %>%
+      filter(!HUC12 %in% add_match$HUC12)
+    
+    add_match <- select(add_match, HUC12, TOHUC, 
+                        intersected_LevelPathI = LevelPathI, 
+                        corrected_LevelPathI = LevelPathI, 
+                        head_HUC12 = HUC12, outlet_HUC12 = HUC12)
+    
+    if(nrow(add_match) > 0) {
+      add_match$trib_intersect <- FALSE
+      add_match$trib_no_intersect <- FALSE
+      add_match$headwater_error <- FALSE
+    }
+    
+    all <- bind_rows(all, add_match)
     
     readr::write_csv(all, out_file)
     
