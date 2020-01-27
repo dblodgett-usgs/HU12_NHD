@@ -503,12 +503,13 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_
     missed <- missed %>%
       filter(!HUC12 %in% add_match$HUC12)
     
-    add_match <- select(add_match, HUC12, TOHUC, 
-                        intersected_LevelPathI = LevelPathI, 
-                        corrected_LevelPathI = LevelPathI, 
-                        head_HUC12 = HUC12, outlet_HUC12 = HUC12)
+    add_match <- select(add_match, HUC12 = HUC12, TOHUC = TOHUC, 
+                        intersected_LevelPathI = LevelPathI)
     
     if(nrow(add_match) > 0) {
+      add_match$corrected_LevelPathI <- add_match$intersected_LevelPathI
+      add_match$head_HUC12 <- add_match$HUC12
+      add_match$outlet_HUC12 <- add_match$HUC12
       add_match$trib_intersect <- FALSE
       add_match$trib_no_intersect <- FALSE
       add_match$headwater_error <- FALSE

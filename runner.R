@@ -1,4 +1,6 @@
 source("R/setup.R")
+source("R/1_download.R")
+source("R/2_fixes.R")
 source("R/3_setup.R")
 source("R/4_find_match.R")
 source("R/5_find_outlets.R")
@@ -13,8 +15,8 @@ plan <- drake_plan(
   national_viz_simp = 500,
   temp_dir = "temp/",
   nhdplus_dir = "data/nhdp/NHDPlusNationalData",
-  nhdplus_gdb = "NHDPlusNationalData/NHDPlusV21_National_Seamless.gdb",
-  nhdplus_url = "https://s3.amazonaws.com/nhdplus/NHDPlusV21/Data/NationalData/NHDPlusV21_NationalData_CONUS_Seamless_Geodatabase_05.7z",
+  nhdplus_gdb = "NHDPlusV21_National_Seamless.gdb",
+  nhdp_v1_dir = "data/nhdpv1/",
   rf1_url = "https://water.usgs.gov/GIS/dsdl/erf1_2.e00.gz",
   rf1_dir = "data/RF1/",
   rf1_file = download_rf1(rf1_dir, rf1_url),
@@ -22,15 +24,20 @@ plan <- drake_plan(
   nhdplus_cats = st_transform(read_sf(nhdplus_gdb_path, "CatchmentSP"), prj),
   ##### Load static dependencies
   nhdplus_wbd_fixes = get_fixes("nhdplusv2"),
-  nhdplus_gdb_path = download_nhdplusv2(nhdplus_dir, nhdplus_url),
+  nhdplus_gdb_path = download_nhdplusv2(nhdplus_dir),
   nhdplus_wbd_exclusions = get_exclusions(nhdplus_gdb_path),
+  nhdpv1_path = download_v1(nhdp_v1_dir),
+  nhdpv1_cat = compile_v1_cats(nhdpv1_path, "data/nhdpv1/nhdpv1.gpkg"),
+  nhdpv1_fline = compile_v1_fline(nhdpv1_path, "data/nhdpv1/nhdpv1.gpkg"),
+  nhdpv1_2_xwalk = get_nhdp_crosswalk(nhdplus_dir),
   ##### Load Data
   nhdplus_wbd = get_wbd(nhdplus_gdb_path, nhdplus_wbd_fixes, prj),
   nhdplus_net = get_net(read_sf(nhdplus_gdb_path, "NHDFlowline_Network"), prj),
   nhdplus_net_atts = st_set_geometry(nhdplus_net, NULL),
   ##### Match NHDPlusV2 with stable (old) WBD
   nhdplus_oldwbd_out = "nhdplus_oldwbd_out/",
-  nhdplus_oldwbd_hu_joiner = par_match_levelpaths(nhdplus_net, nhdplus_wbd, proc_simp, cores, temp_dir, nhdplus_oldwbd_out),
+  nhdplus_oldwbd_hu_joiner = par_match_levelpaths(nhdplus_net, nhdplus_wbd, proc_simp, cores, temp_dir, paste0(nhdplus_oldwbd_out, 
+                                                                                                               "map_joiner.csv")),
   nhdplus_oldwbd_lp_points = get_lp_points(nhdplus_oldwbd_hu_joiner, nhdplus_net, wbd, wbd_exclusions),
   nhdplus_oldwbd_na_outlet_coords = get_na_outlets_coords(nhdplus_oldwbd_lp_points$na, nhdplus_net),
   nhdplus_oldwbd_in_list = get_in_list(nhdplus_oldwbd_lp_points, nhdplus_net),
@@ -43,7 +50,7 @@ plan <- drake_plan(
   wbd_dir = "data/wbd",
   wbd_zip_file = "WBD_National_GDB.zip",
   wbd_gdb_file = "WBD_National_GDB.gdb",
-  wbd_url = "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/WBD/National/GDB/WBD_National_GDB.zip",
+  wbd_url = "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/WBD/National/GDB/National_WBD_GDB.zip",
   ##### Static dependencies for newest WBD
   wbd_fixes = get_fixes("latest"),
   wbd_gdb_path = download_wbd(wbd_dir),
@@ -52,7 +59,8 @@ plan <- drake_plan(
   hu02 = st_simplify(st_transform(read_sf(wbd_gdb_path, "WBDHU2"), prj), dTolerance = national_viz_simp),
   ##### Match newest WBD to NHDPlusV2.
   nhdplus_newwbd_out = "nhdplus_newwbd_out/",
-  nhdplus_newwbd_hu_joiner = par_match_levelpaths(nhdplus_net, wbd, proc_simp, cores, temp_dir, nhdplus_newwbd_out),
+  nhdplus_newwbd_hu_joiner = par_match_levelpaths(nhdplus_net, wbd, proc_simp, cores, temp_dir, file.path(nhdplus_newwbd_out,
+                                                                                                          "map_joiner.csv")),
   nhdplus_newwbd_lp_points = get_lp_points(nhdplus_newwbd_hu_joiner, nhdplus_net, wbd, wbd_exclusions),
   nhdplus_newwbd_na_outlet_coords = get_na_outlets_coords(nhdplus_newwbd_lp_points$na, nhdplus_net),
   nhdplus_newwbd_in_list = get_in_list(nhdplus_newwbd_lp_points, nhdplus_net),
@@ -71,7 +79,7 @@ plan <- drake_plan(
   rf1_hw = get_hw_points(rf1),
   rf1_nhdplus_hw_pairs = get_hw_pairs(rf1_hw, nhdplus_cats),
   rf1_nhdplus = match_flowpaths(left_join(select(prepare_nhdplus(nhdplus_net_atts, 100, 0, 0, FALSE), COMID),
-                                          nhdplus_net_atts, by = "COMID"), #[, 1:40]
+                                          nhdplus_net_atts, by = "COMID"),
                                 st_set_geometry(rf1, NULL),
                                 rf1_nhdplus_hw_pairs, 4),
   rf1_output = write_rf1_output(rf1, rf1_nhdplus, rf1_out),
@@ -88,8 +96,8 @@ plan <- drake_plan(
   plot_lps_data_wbd = get_lp_plot_data_wbd(plot_lps_data, nhdplus_wbd, nhdplus_oldwbd_linked_points, national_viz_simp),
   plot_lps_data_all = get_lp_plot_data_rf1(plot_lps_data_wbd, rf1, rf1_nhdplus, national_viz_simp),
   plot_lps = get_lp_plots(plot_lps_data_all, 3, hu02, hu02_filter = "10",
-                          bb = c(xmin = -103.5, ymin = 44.5, xmax = -101.5, ymax = 47)),
-  plot_hw = get_hw_fig(),
+                          bb = c(xmin = -103.5, ymin = 44.5, xmax = -101.5, ymax = 47))#,
+  # plot_hw = get_hw_fig()
 )
 
 config <- drake_config(plan = plan,
