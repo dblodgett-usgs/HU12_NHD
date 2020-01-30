@@ -70,7 +70,6 @@ test_that("match levelpaths runs 2279159", {
   # This could be fixed by fixing toHUC codes, but will test it as is for now to verify behavior.
   expect_true(matched$outlet_HUC12[which(matched$HUC12 == "102702020102")] == "102702050705")
 
-  expect_equal(sum(matched$trib_intersect), 20)
   expect_equal(sum(matched$trib_no_intersect), 2)
 
   # Corrected levelpath and head huc when first order tributary gets corrected.
@@ -99,18 +98,27 @@ test_that("match levelpaths multi-overlap-outlet 931010009", {
 })
 
 test_that("match levelpaths funky heatwater 4292649", {
-  matched <- match_levelpaths(readRDS("data/match_levelpaths_4292649.rds"), 4292649, add_checks = TRUE)
-  expect_true(!150020702 %in% matched$corrected_LevelPathI)
+  net <- read_sf("data/test_4292649.gpkg", "NHDFlowline_Network") %>%
+    st_zm()
+  hu <- read_sf("data/test_4292649.gpkg", "HUC12_new")
+    
+  suppressWarnings(matched <- par_match_levelpaths(net, hu, 0, 1, 
+                                  tempdir(check = TRUE), 
+                                  "temp.csv"))
+  
+  unlink("temp.csv")
+  
+  #verified manually.
+  expect_true(matched$corrected_LevelPathI[matched$HUC12 == "010100040901"] == 150020702)
 
   # not much to do with this one. 010100040905 has multiple overlaps from the wrong watershed.
   # expect_true(!150067066 %in% matched$corrected_LevelPathI)
-  expect_true(nrow(matched) == 152)
+  expect_true(nrow(matched) == 153)
   expect_true(sum(matched$headwater_error) == 2)
 
   huc12 <- dplyr::select(clean_huc12(matched), corrected_LevelPathI, head_HUC12, outlet_HUC12) %>%
     dplyr::filter(!is.na(outlet_HUC12)) %>%
     dplyr::distinct()
-
 
   expect_true(length(unique(huc12$corrected_LevelPathI)) == nrow(huc12))
 
@@ -130,10 +138,11 @@ test_that("match levelpaths 20204804", {
 
 test_that("match levelpaths 10055266", {
   # headwaters of levelpath 200011667
-  matched <- match_levelpaths(readRDS("data/match_levelpaths_10055266.rds"), 10055266, add_checks = TRUE)
+  matched <- match_levelpaths(readRDS("data/match_levelpaths_10055266.rds"), 
+                              10055266, add_checks = TRUE)
   expect_true(all(matched$head_HUC12[matched$corrected_LevelPathI == 200011667] == "020802010601"))
 
-  expect_equal(nrow(matched), 296)
+  expect_equal(nrow(matched), 297)
   
   huc12 <- dplyr::select(matched, levelpath = corrected_LevelPathI, head_huc12 = head_HUC12, outlet_huc12 = outlet_HUC12) %>%
     dplyr::filter(!is.na(outlet_huc12)) %>%
@@ -163,7 +172,15 @@ test_that("match levelpaths runs 12228521", {
   net_prep <- readRDS("data/match_levelpaths_12228521.rds")
   matched <- match_levelpaths(net_prep, start_comid, add_checks = TRUE)
 
-  expect_true(matched$head_HUC12[matched$HUC12 == "040601040203"] == "040601040203")
+  expect_true(length(matched$head_HUC12[matched$HUC12 == "040601040203"]) == 0)
+})
+
+test_that("match levelpaths doesn't miss levelpath 250031924", {
+  start_comid <- 9074086
+  net_prep <- readRDS("data/match_levelpaths_9074086.rds")
+  matched <- match_levelpaths(net_prep, start_comid, add_checks = TRUE)
+  
+  expect_true(matched$corrected_LevelPathI[matched$HUC12 == "030402060502"] == "250031924")
 })
 
 test_that("high_res problem oputlet", {

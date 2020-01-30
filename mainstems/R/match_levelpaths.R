@@ -143,38 +143,44 @@ get_lp_hu <- function(fline_hu, start_comid) {
       lp_hu[as.character(nlp)] <- list(lp_hu_temp) # save that list.
 
       # filter the found hu12s out of the set we search next time.
-      fline_hu <- filter(fline_hu, !HUC12 %in% lp_hu[[as.character(nlp)]])
-
+      # Remove all that match the HU12s and current nlp.
+      remove <- fline_hu$LevelPathI == nlp & fline_hu$HUC12 %in% lp_hu[[as.character(nlp)]]
+      
+      fline_hu <- filter(fline_hu, !remove)
+      
       nlp_tracker <- c(nlp_tracker, nlp) # record this one to zoom in on later.
 
-      # reset no match counter
-      none_count <- 0
     } else {
       if(any(fline_hu$DnLevelPat == nlp, na.rm = TRUE)) {
         nlp_tracker <- c(nlp, nlp_tracker)
         keep_going <- TRUE
       }
-
-      none_count <- none_count + 1
     }
 
-    if(length(next_lp) == 0 | none_count > 5 | (keep_going & length(next_lp) == 0)) { # If on the last nlp next_lp will be empty.
+    if(length(next_lp) == 0 | keep_going) { # If on the last nlp next_lp will be empty.
       
       keep_going <- FALSE
+      
+      i <- 0
+      while(length(next_lp) == 0 & length(nlp_tracker) > 0) {
+        
+        next_lp <- get_next_lp(fline_hu, nlp_tracker)
 
-      next_lp <- get_next_lp(fline_hu, nlp_tracker)
-
-      next_lp <- next_lp[["LevelPathI"]]
-
+        next_lp <- next_lp[["LevelPathI"]]
+        
+        i <- i + 1
+        if(i > 1000) stop("runaway loop?")
 
       if(length(nlp_tracker) > 1) { # maintain backlog that needs to be worked through.
         nlp_tracker <- nlp_tracker[2:length(nlp_tracker)]
       } else {
         nlp_tracker <- c()
       }
+      }
     }
 
     nlp <- next_lp[1]
+
     if(length(next_lp) > 1) {
       next_lp <- next_lp[2:length(next_lp)]
     } else {
@@ -379,7 +385,9 @@ correct_hu <- function(hu, fline_hu, funky_headwaters, add_checks) {
   hu <- hu %>%
     left_join(select(lp_outlet, corrected_LevelPathI, updated_outlet_HUC12 = outlet_HUC12),
               by = "corrected_LevelPathI") %>%
-    select(-outlet_HUC12) %>% rename(outlet_HUC12 = updated_outlet_HUC12) %>%
+    select(-outlet_HUC12) %>% 
+    rename(outlet_HUC12 = updated_outlet_HUC12) %>%
+    filter(corrected_LevelPathI != -1) %>%
     distinct()
 
   ################################################################################
@@ -542,9 +550,9 @@ get_process_data <- function(net, wbd, simp) {
 prep_net <- function(net, simp) {
   
   net_prep <- prepare_nhdplus(net, 
-                              min_network_size = 20, # sqkm
+                              min_network_size = 0, # sqkm
                               min_path_length = 0, # sqkm
-                              min_path_size = 10, # sqkm
+                              min_path_size = 0, # sqkm
                               purge_non_dendritic = TRUE,
                               warn =  TRUE, error = FALSE) %>%
     left_join(select(net, COMID, DnLevelPat, AreaSqKM), by = "COMID") %>%
