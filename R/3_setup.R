@@ -127,3 +127,40 @@ clean_rf1 <- function(rf1) {
     st_sf() 
 }
 
+map_nhdpv1 <- function(ms, nhdpv1, nhdpv2, xwalk) {
+  find <- select(ms, LevelPathI, outlet_nhdpv2_COMID, head_nhdpv2_COMID) %>%
+    left_join(select(xwalk, V2_ComID, outlet_V1_ComID = V1_ComID, outlet_XWalkType = XWalkType), 
+              by = c("outlet_nhdpv2_COMID" = "V2_ComID")) %>%
+    left_join(select(xwalk, V2_ComID, head_V1_ComID = V1_ComID, head_XWalkType = XWalkType),
+              by = c("head_nhdpv2_COMID" = "V2_ComID"))
+  
+  missing_outlet <- find %>%
+    filter(is.na(outlet_V1_ComID))
+  
+  missing_head <- find %>%
+    filter(is.na(head_V1_ComID))
+  
+  find <- find %>%
+    filter(!is.na(outlet_V1_ComID) & !is.na(head_V1_ComID))
+  
+  find <- find %>%
+    left_join(select(nhdpv1, COMID, HYDROSEQ), by = c("outlet_V1_ComID" = "COMID")) %>%
+    group_by(LevelPathI) %>%
+    filter(HYDROSEQ == min(HYDROSEQ) & HYDROSEQ != 0) %>%
+    select(-HYDROSEQ) %>%
+    ungroup() %>%
+    left_join(select(nhdpv1, COMID, HYDROSEQ), by = c("head_V1_ComID" = "COMID")) %>%
+    group_by(LevelPathI) %>%
+    filter(HYDROSEQ == max(HYDROSEQ) & HYDROSEQ != 0) %>%
+    select(-HYDROSEQ) %>%
+    ungroup()
+  
+  dup <- group_by(find, LevelPathI) %>%
+    filter(n() > 1)
+  
+  missing_head <- find$LevelPathI[is.na(find$head_V1_ComID)]
+  missing_outlet <- find$LevelPathI[is.na(find$outlet_V1_ComID)]
+  
+  return(list(mapped = find, missing_head = missing_head, missing_outlet = missing_outlet))
+}
+

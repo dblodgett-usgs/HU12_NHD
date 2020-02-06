@@ -44,6 +44,13 @@ match_levelpaths <- function(fline_hu, start_comid, add_checks = FALSE) {
   # In case the outlet flowline spans multiple HUs near the outlet.
   outlet_hu <- sort(fline_hu[which(fline_hu$COMID == start_comid),]$TOHUC,
                      decreasing = FALSE)[1]
+  
+  if(is.na(outlet_hu)) { # This is sketchy but only for the old WBD.
+    outlet_hu <- filter(fline_hu, !is.na(HUC12) & HUC12 != "UNKNOWN" & TOHUC != "UNKNOWN") %>%
+      filter(Hydroseq == min(Hydroseq, na.rm = TRUE))
+    outlet_hu <- sort(outlet_hu$TOHUC, 
+                      decreasing = TRUE)[1]
+  }
 
 
   #################################################################
@@ -187,7 +194,8 @@ get_lp_hu <- function(fline_hu, start_comid) {
       next_lp <- c()
     }
 
-    if(length(next_lp) == 0 & length(nlp_tracker) == 0 & (is.null(nlp) | is.na(nlp))) check <- FALSE
+    if(length(next_lp) == 0 & length(nlp_tracker) == 0 & (is.null(nlp) || is.na(nlp))) check <- FALSE
+
     count <- count + 1
   }
 
@@ -438,7 +446,8 @@ par_match_levelpaths_fun <- function(start_comid, net_atts, net_prep, wbd_atts, 
 #' @param temp_dir directory to write temprary files to
 #' @param out_dir directory to check for cached output.
 #' @export
-par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_file = "temp.csv", net_int = NULL) {
+par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", 
+                                 out_file = "temp.csv", net_int = NULL, purge_temp = TRUE) {
   
   if(names(net) == "NHDFlowline") net <- net$NHDFlowline
   
@@ -446,7 +455,7 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", out_
     all <- readr::read_csv(out_file)
   } else {
     
-    unlink(temp_dir, recursive = TRUE)
+    if(purge_temp) unlink(temp_dir, recursive = TRUE)
     
     if(is.null(net_int)) {
       net_int <- get_process_data(net, wbd, simp)

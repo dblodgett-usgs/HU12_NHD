@@ -181,6 +181,8 @@ test_that("match levelpaths doesn't miss levelpath 250031924", {
   matched <- match_levelpaths(net_prep, start_comid, add_checks = TRUE)
   
   expect_true(matched$corrected_LevelPathI[matched$HUC12 == "030402060502"] == "250031924")
+  
+  linked_points <- get_linked_points(matched, )
 })
 
 test_that("high_res problem oputlet", {
