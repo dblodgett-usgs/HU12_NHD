@@ -16,9 +16,9 @@ source("R/8_hr_proc.R")
 source("R/9_viz_plot.R")
 
 nhdhr_dir <- "data/hr/"
-# nhdhr_hu02 <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", 
-#                "10", "11", "12", "13", "14", "15", "16", "17", "18")
-nhdhr_hu02 <- c("10")
+nhdhr_hu02 <- c("01", "02", "03", "04", "05", "06", "07", "08", "09",
+               "10", "11", "12", "13", "14", "15", "16", "17", "18")
+# nhdhr_hu02 <- c("10")
 prj = 5070
 nhdp_dir <- "data/nhdp/"
 nhdp_gdb <- "NHDPlusNationalData/NHDPlusV21_National_Seamless.gdb"
@@ -65,26 +65,26 @@ plan <- drake_plan(
                                  v2_net = nhdp_net),
                    transform = map(compare, hr_vpu), hpc = FALSE),
   compare_3 = target(post_analysis(comp = bind_rows(compare_2), lower_thresh_km = 1, upper_thresh_km = 100),
-                     transform = combine(compare_2), hpc = FALSE)
-  # plot_bad = target(plot_fun(hr_net = hr_vpu, v2_net = nhdp_net, 
-  #                            lp = matched_lp, comp = compare_2, out_folder = "report"), 
-  #                   transform = map(matched_lp, compare_2, hr_vpu), hpc = FALSE),
-  # big_plot_data = target(get_plot_data(nhdp_net = nhdp_net, hu02 = nhdhr_hu02, 
-  #                                      order = 4, proj = 3857, simp_meters = 400), 
-  #                        hpc = FALSE),
-  # v2_plot_data = target(get_v2_plot_data(nhdp_net = nhdp_net, combine_matched_lp, 
-  #                                        proj = 3857, simp_meters = 400),
-  #                       hpc = FALSE),
-  # hr_plot_data = target(get_hr_plot_data(hr_net = hr_vpu, lp = matched_lp, 
-  #                                        proj = 3857, simp_meters = 400),
-  #                       transform = map(matched_lp, hr_vpu),
-  #                       hpc = FALSE),
-  # plot_frames = target(create_plot_frames(big_plot_data, v2_plot_data, 
-  #                                         hr_plot_data, matched_lp, vpu_f,
-  #                                         wbd_hr = "data/WBD_hr/WBDHU4_DA_06072019.shp", 
-  #                                         threads = 4),
-  #                      transform = map(matched_lp, hr_plot_data, hr_vpu),
-  #                      hpc = TRUE)
+                     transform = combine(compare_2), hpc = FALSE),
+  plot_bad = target(plot_fun(hr_net = hr_vpu, v2_net = nhdp_net,
+                             lp = matched_lp, comp = compare_2, out_folder = "report"),
+                    transform = map(matched_lp, compare_2, hr_vpu), hpc = FALSE),
+  big_plot_data = target(get_plot_data(nhdp_net = nhdp_net, hu02 = nhdhr_hu02,
+                                       order = 4, proj = 3857, simp_meters = 400),
+                         hpc = FALSE),
+  v2_plot_data = target(get_v2_plot_data(nhdp_net = nhdp_net, combine_matched_lp,
+                                         proj = 3857, simp_meters = 400),
+                        hpc = FALSE),
+  hr_plot_data = target(get_hr_plot_data(hr_net = hr_vpu, lp = matched_lp,
+                                         proj = 3857, simp_meters = 400),
+                        transform = map(matched_lp, hr_vpu),
+                        hpc = FALSE),
+  plot_frames = target(create_plot_frames(big_plot_data, v2_plot_data,
+                                          hr_plot_data, matched_lp, vpu_f,
+                                          wbd_hr = "data/WBD_hr/WBDHU4_DA_06072019.shp",
+                                          threads = 4),
+                       transform = map(matched_lp, hr_plot_data, hr_vpu),
+                       hpc = TRUE)
 )
 
 config <- drake_config(plan = plan,
