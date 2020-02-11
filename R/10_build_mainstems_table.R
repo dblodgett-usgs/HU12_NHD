@@ -4,7 +4,8 @@ build_mainstem_table <- function(nhdplus_net,
                                  rfp,
                                  rf1,
                                  nhdp_wbd,
-                                 wbd) {
+                                 wbd,
+                                 nhd1) {
   
   GNIS <- select(nhdplus_net, LevelPathI, Hydroseq, GNIS_ID, GNIS_NAME) %>%
     filter(GNIS_ID != " ") %>%
@@ -26,6 +27,8 @@ build_mainstem_table <- function(nhdplus_net,
     left_join(rename(get_hulp(olp, nhdplus_net, nhdp_wbd), outlet_nhdpv2HUC12 = outlet_HUC12, head_nhdpv2HUC12 = head_HUC12), by = "LevelPathI") %>%
     left_join(rename(get_hulp(nlp, nhdplus_net, wbd), outlet_latestHUC12 = outlet_HUC12, head_latestHUC12 = head_HUC12), by = "LevelPathI") %>%
     left_join(get_rf1lp(rf1, rfp, nhdplus_net), by = "LevelPathI")
+  
+  
 }
 
 get_lp_outlets <- function(nhdplus_net) {
@@ -100,6 +103,14 @@ get_rf1lp <- function(rf1, rfp, nhdplus_net) {
     distinct()
 }
 
+add_v1 <- function(mainstems_table, nhdpv1_mapped) {
+  mainstems_table <- mainstems_table %>%
+    left_join(select(nhdpv1_mapped$mapped, LevelPathI, 
+                     outlet_nhdpv1_COMID = outlet_V1_ComID, 
+                     head_nhdpv1_COMID = head_V1_ComID), by = "LevelPathI")
+}
+
+
 make_ms_summary <- function(ms, nhdp_att) {
   nhd_prep <- prepare_nhdplus(nhdp_att, 0, 0, 0, TRUE)
   
@@ -151,4 +162,70 @@ get_hist_list <- function(ms) {
        na_huc12 = make_hist_df(na_huc12),
        rf1 = make_hist_df(rf1),
        na_rf1 = make_hist_df(na_rf1))
+}
+
+ds_till <- function(atts, h) {
+  
+}
+
+find_v1_mainstems <- function(v1, ms, cores = NA) {
+  ms <- filter(ms, !is.na(outlet_latestHUC12) & !is.na(head_latestHUC12))
+  
+  heads <- unique(ms$head_nhdpv1_COMID)
+  
+  heads <- heads[!is.na(heads)]
+  
+  # Get the v1 down hydroseq
+  v1_dnhs <- left_join(distinct(select(v1, COMID, TONODE)), 
+                       distinct(select(v1, FROMNODE, DnHydroseq = HYDROSEQ)), 
+                       by = c("TONODE" = "FROMNODE")) %>%
+    select(-TONODE) %>%
+    distinct()
+  
+  # Deduplicate by removing the down minor hydro path
+  v1_dnhs <- filter(v1_dnhs, !DnHydroseq %in% v1$DNMINHYDRO) %>%
+    distinct()
+  
+  # Further deduplicate by removing the divergence = 2 toCOMIDs.
+  div_heads <- select(v1, COMID, DIVERGENCE) %>%
+    filter(DIVERGENCE == 2)
+  
+  v1_dnhs <- left_join(v1_dnhs, select(v1, toCOMID = COMID, HYDROSEQ), 
+                       by = c("DnHydroseq" = "HYDROSEQ")) %>%
+    filter(v1_dnhs, !toCOMID %in% div_heads$COMID)
+  
+  v1 <- left_join(v1, select(v1_dnhs, -toCOMID), by = "COMID")
+  
+  v1 <- select(v1, COMID, LENGTHKM, DnHydroseq, Hydroseq = HYDROSEQ, 
+               LevelPathI = LEVELPATHI, DnLevelPat = DNLEVELPAT)
+  
+  hs <- select(v1, Hydroseq = Hydroseq) %>%
+    distinct() %>%
+    arrange(Hydroseq)
+  
+  hs$hs <- c(1:nrow(hs))
+  
+  v1 <- left_join(v1, hs, by = "Hydroseq") %>%
+    select(-Hydroseq) %>%
+    rename(Hydroseq = hs) %>%
+    left_join(hs, by = c("DnHydroseq" = "Hydroseq")) %>%
+    select(-DnHydroseq) %>%
+    rename(DnHydroseq = hs) %>%
+    left_join(hs, by = c("LevelPathI" = "Hydroseq")) %>%
+    select(-LevelPathI) %>%
+    rename(LevelPathI = hs) %>%
+    left_join(hs, by = c("DnLevelPat" = "Hydroseq")) %>%
+    select(-DnLevelPat) %>%
+    rename(DnLevelPat = hs)
+  
+  cl <- NULL
+  if(!is.na(cores)) {
+    cl <- parallel::makeCluster(rep("localhost", cores), type = "SOCK")
+  }
+  
+  nets <- pblapply(heads, function(x, net) nhdplusTools::get_DM(net, x), net = v1, cl = cl)
+  
+  parallel::stopCluster(cl)
+  
+  return(nets)
 }

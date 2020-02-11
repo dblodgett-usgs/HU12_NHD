@@ -9,7 +9,6 @@ library(purrr)
 library(gifski)
 library(mainstems)
 
-source("R/1_download_data.R")
 source("R/3_setup.R")
 source("R/4_find_match.R")
 source("R/8_hr_proc.R")
