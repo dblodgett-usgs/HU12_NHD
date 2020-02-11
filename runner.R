@@ -1,4 +1,4 @@
-source("R/setup.R")
+source("R/0_setup.R")
 source("R/1_download.R")
 source("R/2_fixes.R")
 source("R/3_setup.R")
