@@ -12,12 +12,12 @@ ogr2ogr -overwrite -progress -f "PostGreSQL" PG:"host=localhost dbname=nhd" -nlt
 
 psql -c "CREATE INDEX ON net (levelpathi);" postgresql://localhost:5432/nhd
 
-# ogr2ogr -overwrite -progress -f "PostGreSQL" PG:"host=localhost dbname=nhd" -nlt PROMOTE_TO_MULTI -lco "GEOMETRY_NAME=the_geom" -a_srs EPSG:5070 wbd_viz.gpkg net_grouped
+ogr2ogr -overwrite -progress -f "PostGreSQL" PG:"host=localhost dbname=nhd" -nlt PROMOTE_TO_MULTI -lco "GEOMETRY_NAME=the_geom" -a_srs EPSG:5070 wbd_viz.gpkg net_grouped
 
 ogr2ogr -overwrite -progress -f "PostGreSQL" PG:"host=localhost dbname=nhd" -nlt PROMOTE_TO_MULTI -lco "GEOMETRY_NAME=the_geom" -a_srs EPSG:5070 out_nhdp_latest/wbd_viz.gpkg wbd_matched
 
-# ogr2ogr -overwrite -progress -f "PostGreSQL" PG:"host=localhost dbname=nhd" -nlt PROMOTE_TO_MULTI -lco "GEOMETRY_NAME=the_geom" -a_srs EPSG:5070 out_nhdp_latest/wbd_viz.gpkg wbd_grouped
+ogr2ogr -overwrite -progress -f "PostGreSQL" PG:"host=localhost dbname=nhd" -nlt PROMOTE_TO_MULTI -lco "GEOMETRY_NAME=the_geom" -a_srs EPSG:5070 out_nhdp_latest/wbd_viz.gpkg wbd_grouped
 
-# ogr2ogr -overwrite -progress -f "PostGreSQL" PG:"host=localhost dbname=nhd" -nlt PROMOTE_TO_MULTI -lco "GEOMETRY_NAME=the_geom" -nln wbd_hu12 -t_srs EPSG:5070 WBD_National_GDB.gdb WBDHU12
+ogr2ogr -overwrite -progress -f "PostGreSQL" PG:"host=localhost dbname=nhd" -nlt PROMOTE_TO_MULTI -lco "GEOMETRY_NAME=the_geom" -nln wbd_hu12 -t_srs EPSG:5070 WBD_National_GDB.gdb WBDHU12
 
-# ogr2ogr -overwrite -progress -f "PostGreSQL" PG:"host=localhost dbname=nhd" -nlt PROMOTE_TO_MULTI -lco "GEOMETRY_NAME=the_geom" -nln nhdplus_hu12 -t_srs EPSG:5070 data/nhdplus/NHDPlusNationalData/NHDPlusV21_National_Seamless.gdb/ HUC12
+ogr2ogr -overwrite -progress -f "PostGreSQL" PG:"host=localhost dbname=nhd" -nlt PROMOTE_TO_MULTI -lco "GEOMETRY_NAME=the_geom" -nln nhdplus_hu12 -t_srs EPSG:5070 data/nhdplus/NHDPlusNationalData/NHDPlusV21_National_Seamless.gdb/ HUC12
