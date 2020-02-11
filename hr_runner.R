@@ -19,7 +19,7 @@ nhdhr_hu02 <- c("01", "02", "03", "04", "05", "06", "07", "08", "09",
                "10", "11", "12", "13", "14", "15", "16", "17", "18")
 # nhdhr_hu02 <- c("10")
 prj = 5070
-nhdp_dir <- "data/"
+nhdp_dir <- "data/nhdp/"
 nhdp_gdb <- "NHDPlusNationalData/NHDPlusV21_National_Seamless.gdb"
 nhdp_url <- "https://s3.amazonaws.com/nhdplus/NHDPlusV21/Data/NationalData/NHDPlusV21_NationalData_CONUS_Seamless_Geodatabase_05.7z"
 nhdp_gdb_path <- download_nhdplusv2(nhdp_dir)
