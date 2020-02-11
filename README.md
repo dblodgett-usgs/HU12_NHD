@@ -1,6 +1,6 @@
 # HU12 NHDPlusV2 NHDPlus HiRes Matching
 
-This repository holds work in progress code meant to match NHDPlus and Watershed Boundary Dataset networks to eachother. It is being shared for access with colleagues only. It is preliminary and subject to revision.
+This repository holds work in progress code meant to match NHDPlus and Watershed Boundary Dataset networks to each other. It is being shared for access with colleagues only. It is preliminary and subject to revision.
 
 ![](img/1002.gif)  
 ![](img/fig1.png)
@@ -19,6 +19,36 @@ This software is in the public domain because it contains materials that origina
 
 Although this software program has been used by the USGS, no warranty, expressed or implied, is made by the USGS or the U.S. Government as to the accuracy and functioning of the program and related program material nor shall the fact of distribution constitute any such warranty, and no responsibility is assumed by the USGS in connection therewith.
 This software is provided "AS IS."
+
+# Project Layout
+
+This project is designed around the `drake` workflow "_runner" scripts and uses the RStudio project scheme. The runner scripts source files in the `R` directory which in turn load all required packages. There is a R package in the `mainstems` directory that has rigorously tested functions that do the "heavy lifting" of the included workflows.
+
+### `data`
+
+The `data` folder contains all web-retrievable data required for the workflows. It is not checked in to the repository and may, for example, be symbolically linked to a system data store directory.
+
+### `docs`
+
+Used for gif and html resources that are hosted via GitHub pages.
+
+### `hu12_fixes`
+
+Contains over-ride fixes to be applied to the WBD "TOHUC" coding.
+
+### `img`
+
+Contains images that are included in the README.md file.
+
+### `mainstems`
+
+### `out`
+
+All output is written here. It is not included in the repository.
+
+### `R`
+
+All un-tested ad-hoc R scripts are included here. These are primarily data-ETL and visualization. An effort has been made to move all consequential code to `mainstems` and other packages.
 
 # License
 
