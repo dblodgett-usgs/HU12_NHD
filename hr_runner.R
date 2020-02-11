@@ -54,9 +54,9 @@ plan <- drake_plan(
                              matched_lp = matched_lp),
                    transform = map(hr_vpu, matched_lp), hpc = FALSE),
 
-  combine = target(write_output(bind_rows(compare_2), "report/compare.csv"),
+  combine = target(write_output(bind_rows(compare_2), "out/report/compare.csv"),
                    transform = combine(compare_2), hpc = FALSE),
-  combine_matched_lp = target(write_output(bind_rows(matched_lp), "report/matched.csv"),
+  combine_matched_lp = target(write_output(bind_rows(matched_lp), "out/report/matched.csv"),
                               transform = combine(matched_lp), hpc = FALSE),
 
   compare_2 = target(compare_table(comp = compare,
@@ -66,7 +66,7 @@ plan <- drake_plan(
   compare_3 = target(post_analysis(comp = bind_rows(compare_2), lower_thresh_km = 1, upper_thresh_km = 100),
                      transform = combine(compare_2), hpc = FALSE),
   plot_bad = target(plot_fun(hr_net = hr_vpu, v2_net = nhdp_net,
-                             lp = matched_lp, comp = compare_2, out_folder = "report"),
+                             lp = matched_lp, comp = compare_2, out_folder = "out/report"),
                     transform = map(matched_lp, compare_2, hr_vpu), hpc = FALSE),
   big_plot_data = target(get_plot_data(nhdp_net = nhdp_net, hu02 = nhdhr_hu02,
                                        order = 4, proj = 3857, simp_meters = 400),

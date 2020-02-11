@@ -13,7 +13,7 @@ hr_hu02 <- c("01", "02", "03", "04", "05", "06", "07", "08", "09",
 pattern <- ".*[0-9][0-9][0-9][0-9].*.gdb$"
 
 hr_dir <- "data/hr/"
-out <- "nhdplushr_newwbd"
+out <- "out/nhdplushr_newwbd"
 
 wbd_fixes <- read_csv("fixes/hu_fixes.csv") %>%
   bind_rows(list(HUC12 = "180102040904", TOHUC = "180102041003", comment = "misdirected"))

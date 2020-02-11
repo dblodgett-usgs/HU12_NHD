@@ -37,7 +37,7 @@ plan <- drake_plan(
   nhdplus_net = get_net(read_sf(nhdplus_gdb_path, "NHDFlowline_Network"), prj),
   nhdplus_net_atts = st_set_geometry(nhdplus_net, NULL),
   ##### Match NHDPlusV2 with stable (old) WBD
-  nhdplus_oldwbd_out = "nhdplus_oldwbd_out/",
+  nhdplus_oldwbd_out = "out/nhdplus_oldwbd/",
   nhdplus_oldwbd_net_int = mainstems:::get_process_data(nhdplus_net, nhdplus_wbd, proc_simp),
   nhdplus_oldwbd_hu_joiner = par_match_levelpaths(nhdplus_net, nhdplus_wbd, proc_simp, 
                                                   cores, temp_dir, 
@@ -65,7 +65,7 @@ plan <- drake_plan(
   wbd = get_wbd(wbd_gdb_path, wbd_fixes, prj),
   hu02 = st_simplify(st_transform(read_sf(wbd_gdb_path, "WBDHU2"), prj), dTolerance = national_viz_simp),
   ##### Match newest WBD to NHDPlusV2.
-  nhdplus_newwbd_out = "nhdplus_newwbd_out/",
+  nhdplus_newwbd_out = "out/nhdplus_newwbd/",
   nhdplus_newwbd_hu_joiner = par_match_levelpaths(nhdplus_net, wbd, proc_simp, cores, temp_dir, file.path(nhdplus_newwbd_out,
                                                                                                           "map_joiner.csv")),
   nhdplus_newwbd_lp_points = get_lp_points(nhdplus_newwbd_hu_joiner, nhdplus_net, wbd, wbd_exclusions),
@@ -82,7 +82,7 @@ plan <- drake_plan(
   out_wbd_plot_data = get_wbd_plot_data(nhdplus_net, wbd_gdb_path, nhdplus_newwbd_plumbing, viz_simp, prj, cores, file.path(nhdplus_newwbd_out, "wbd_plots.gpkg")),
   out_wbd_plots = plot_wbd(out_wbd_plot_data),
   # Match RF1 to NHDPlusV2
-  rf1_out = "rf1_out",
+  rf1_out = "out/rf1_out",
   rf1_hw = get_hw_points(rf1),
   rf1_nhdplus_hw_pairs = get_hw_pairs(rf1_hw, nhdplus_cats),
   rf1_nhdplus = match_flowpaths(left_join(select(prepare_nhdplus(nhdplus_net_atts, 100, 0, 0, FALSE), COMID),

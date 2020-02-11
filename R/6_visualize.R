@@ -287,7 +287,7 @@ plot_wbd <- function(gpkg) {
     wbd <- read_sf(gpkg, paste0("wbd_hu", hl)) %>%
       rmapshaper::ms_simplify(keep = 0.05, sys = TRUE)
     bb <- st_as_sfc(st_bbox(wbd), crs = st_crs(wbd))
-    plot_fun(bb, st_geometry(wbd), st_geometry(net), st_geometry(out), paste0("png/wbd_viz_hu", hl))
+    plot_fun(bb, st_geometry(wbd), st_geometry(net), st_geometry(out), paste0("out/png/wbd_viz_hu", hl))
   }
 }
 
@@ -384,7 +384,7 @@ get_lp_plots <- function(lp_plot_data, delay, hu02, hu02_filter = NULL, bb = NUL
            lp_plot_data = lp_plot_data, 
            hu02 = hu02)
   }, 
-  gif_file = "gif/big_animation.gif", 
+  gif_file = "out/gif/big_animation.gif", 
   width = 2048, height = 1536, delay = delay)
   
 }

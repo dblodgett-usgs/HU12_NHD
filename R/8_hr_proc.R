@@ -138,8 +138,8 @@ post_analysis <- function(comp, lower_thresh_km, upper_thresh_km) {
   readr::write_csv(outlet_summary, "report/outlet_summary.csv")
   readr::write_csv(length_summary, "report/length_summary.csv")
   
-  make_histo(comp, "report/all_outlet.png", "report/all_length.png", lower_thresh_km, upper_thresh_km)
-  make_histo(comp_big, "report/big_outlet.png", "report/big_length.png", lower_thresh_km, upper_thresh_km)
+  make_histo(comp, "out/report/all_outlet.png", "out/report/all_length.png", lower_thresh_km, upper_thresh_km)
+  make_histo(comp_big, "out/report/big_outlet.png", "out/report/big_length.png", lower_thresh_km, upper_thresh_km)
 }
 
 plot_fun <- function(hr_net, v2_net, lp, comp, out_folder) {
