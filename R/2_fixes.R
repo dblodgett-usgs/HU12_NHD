@@ -1,6 +1,6 @@
 get_fixes <- function(version) {
   if(version == "latest") {
-    fixes <- readr::read_csv("fixes/hu_fixes.csv") %>%
+    fixes <- readr::read_csv("hu12_fixes/hu_fixes.csv") %>%
       bind_rows(list(HUC12 = "180102040904", TOHUC = "180102041003", comment = "misdirected"))
   } else if(version == "nhdplusv2") {
   ##### Fixes #####
