@@ -50,7 +50,7 @@ get_hu_outlet <- function(hu12, hu_size, hu_name) {
 par_hr_pairs <- function(x, prj, nhdplus_hw_outlets) {
   cats <- sf::read_sf(x, "NHDPlusCatchment")
   cats <- sf::st_transform(cats, prj)
-  cats <- align_nhdplus_names(cats)
+  cats <- nhdplusTools::align_nhdplus_names(cats)
   
   pairs <- sf::st_set_geometry(
     sf::st_join(nhdplus_hw_outlets,
