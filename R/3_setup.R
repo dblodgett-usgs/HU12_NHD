@@ -13,7 +13,7 @@ rename_hr_fl = function(hr_vpus) {
 prep_nhdplushr <- function(hr_fline) {
   hr_fline <- left_join(st_set_geometry(hr_fline, NULL), 
                         select(st_set_geometry(hr_fline, NULL),
-                               toCOMID = .data$NHDPlusID,
+                               toCOMID = .data$COMID,
                                .data$FromNode),
                         by = c("ToNode" = "FromNode"))
   
@@ -26,14 +26,14 @@ prep_nhdplushr <- function(hr_fline) {
                               purge_non_dendritic = TRUE) %>%
     select(ID = COMID, toID = toCOMID, length = LENGTHKM) %>%
     left_join(select(hr_fline,
-                     ID = NHDPlusID, area = AreaSqKm, nameID = GNIS_ID),
+                     ID = COMID, area = AreaSqKM, nameID = GNIS_ID),
               by = "ID") %>%
     distinct()
   
   hr_fline["weight"] <- nhdplusTools::calculate_arbolate_sum(select(hr_fline, ID, toID, length))
   
   hr_fline <- left_join(hr_fline, 
-                        nhdplusTools::calculate_levelpaths(hr_fline), 
+                        nhdplusTools::get_levelpaths(hr_fline), 
                         by = "ID")
   
   hr_fline <- left_join(hr_fline, 
