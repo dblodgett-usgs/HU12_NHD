@@ -143,7 +143,7 @@ post_analysis <- function(comp, lower_thresh_km, upper_thresh_km) {
 }
 
 plot_fun <- function(hr_net, v2_net, lp, comp, out_folder) {
-  hr_net <- filter(hr_net, NHDPlusID %in% lp$member_NHDPlusID) %>%
+  hr_net <- filter(hr_net, COMID %in% lp$member_NHDPlusID) %>%
     st_zm()
   v2_net <- filter(v2_net, LevelPathI %in% lp$mr_LevelPathI) %>%
     st_zm()
@@ -172,7 +172,7 @@ plot_fun <- function(hr_net, v2_net, lp, comp, out_folder) {
 plot_comp <- function(row, bad, lp, hr_net, v2_net, states, out_folder) {
   mr_lp <- bad[row, ]$mr_LevelPathI
   
-  hr <- filter(hr_net, NHDPlusID %in% lp$member_NHDPlusID[lp$mr_LevelPathI == mr_lp])
+  hr <- filter(hr_net, COMID %in% lp$member_NHDPlusID[lp$mr_LevelPathI == mr_lp])
   mr <- filter(v2_net, LevelPathI == mr_lp)
   
   hr_length <- sum(hr$LengthKM)
