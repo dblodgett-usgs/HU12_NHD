@@ -89,7 +89,7 @@ write_output <- function(compare, file) {
 compare_table <- function(comp, hr_net, v2_net) {
   
   comp <- left_join(comp, 
-                    select(st_set_geometry(hr_net, NULL), NHDPlusID, hr_LevelPathI = LevelPathI),
+                    select(st_set_geometry(hr_net, NULL), NHDPlusID = COMID, hr_LevelPathI = LevelPathI),
                     by = "NHDPlusID")
   
   comp <- select(comp, mr_LevelPathI = LevelPathI, 
