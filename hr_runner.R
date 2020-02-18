@@ -96,6 +96,6 @@ future::plan(future::multiprocess)
 
 make(config = config)
 
-# drake_build(config = config, "compare_hr_vpu_data.hr.10.1002.gdb_matched_lp_hr_vpu_data.hr.10.1002.gdb")
+# make(plan = plan, "compare_hr_vpu_data.hr.10.1025.gdb_matched_lp_hr_vpu_data.hr.10.1025.gdb")
 
 # v2 LP: 590023769

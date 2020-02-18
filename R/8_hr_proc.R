@@ -6,12 +6,12 @@ post_proc <- function(v2_net, hr_net, matched_lp) {
   
   v2_net <- filter(v2_net, LevelPathI %in% matched_lp$mr_LevelPathI)
   
-  hr_net <- filter(hr_net, NHDPlusID %in% matched_lp$member_NHDPlusID)
+  hr_net <- filter(hr_net, COMID %in% matched_lp$member_NHDPlusID)
   
   matched_lp <- left_join(matched_lp, 
                           select(st_set_geometry(hr_net, NULL), 
-                                 NHDPlusID, hydroseq = HydroSeq), 
-                          by = c("member_NHDPlusID" = "NHDPlusID"))
+                                 COMID, hydroseq = Hydroseq), 
+                          by = c("member_NHDPlusID" = "COMID"))
   
   outlets <- group_by(matched_lp, mr_LevelPathI) %>%
     filter(Hydroseq == min(Hydroseq)) %>%
@@ -20,8 +20,8 @@ post_proc <- function(v2_net, hr_net, matched_lp) {
   matched_lp <- left_join(matched_lp, outlets, by = "mr_LevelPathI")
   
   hr_outlets <- hr_net %>%
-    filter(NHDPlusID %in% outlets$outlet_NHDPlusID) %>%
-    select(NHDPlusID) %>%
+    filter(COMID %in% outlets$outlet_NHDPlusID) %>%
+    select(NHDPlusID = COMID) %>%
     get_mid_coord()
   
   st_crs(hr_outlets) <- st_crs(hr_net)
@@ -65,7 +65,7 @@ post_proc <- function(v2_net, hr_net, matched_lp) {
                       select(st_set_geometry(v2_net, NULL), LevelPathI, LENGTHKM) %>%
                         group_by(LevelPathI) %>%
                         summarise(mr_lengthkm = sum(LENGTHKM)), 
-                      select(st_set_geometry(hr_net, NULL), NHDPlusID, LengthKM) %>%
+                      select(st_set_geometry(hr_net, NULL), NHDPlusID = COMID, LengthKM = LENGTHKM) %>%
                         left_join(select(matched_lp, member_NHDPlusID, mr_LevelPathI), by = c("NHDPlusID" = "member_NHDPlusID")) %>%
                         group_by(mr_LevelPathI) %>%
                         summarise(hr_lengthkm = sum(LengthKM)), 
