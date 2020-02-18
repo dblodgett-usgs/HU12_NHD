@@ -18,9 +18,9 @@ get_v2_plot_data <- function(nhdp_net, lp, proj, simp_meters) {
 }
 
 get_hr_plot_data <- function(hr_net, lp, proj, simp_meters) {
-  filter(hr_net, NHDPlusID %in% lp$member_NHDPlusID) %>%
+  filter(hr_net, COMID %in% lp$member_NHDPlusID) %>%
     st_zm() %>%
-    select(NHDPlusID) %>%
+    select(NHDPlusID = COMID) %>%
     st_transform(proj) %>%
     st_simplify(dTolerance = simp_meters)
 }
