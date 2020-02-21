@@ -25,7 +25,7 @@ nhdp_url <- "https://s3.amazonaws.com/nhdplus/NHDPlusV21/Data/NationalData/NHDPl
 nhdp_gdb_path <- download_nhdplusv2(nhdp_dir)
 # hr_path <- download_nhdplushr(nhdhr_dir, nhdhr_hu02)
 hr_path <- "data/hr"
-hr_vpus <- list.files(hr_path, pattern = ".*10[0-9][0-9].*.gdb$",
+hr_vpus <- list.files(hr_path, pattern = ".*[0-9][0-9][0-9][0-9].*.gdb$",
                          full.names = TRUE, recursive = TRUE, 
                          include.dirs = TRUE)
 
@@ -90,7 +90,7 @@ config <- drake_config(plan = plan,
                        memory_strategy = "autoclean", 
                        garbage_collection = TRUE, 
                        parallelism = "future", 
-                       jobs = 4)
+                       jobs = 24)
 
 future::plan(future::multiprocess)
 
