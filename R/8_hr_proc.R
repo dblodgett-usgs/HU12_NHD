@@ -135,8 +135,8 @@ post_analysis <- function(comp, lower_thresh_km, upper_thresh_km) {
   })
   length_summary <- data.frame(length_diff_m = labs, count = length_hist$counts)
   
-  readr::write_csv(outlet_summary, "report/outlet_summary.csv")
-  readr::write_csv(length_summary, "report/length_summary.csv")
+  readr::write_csv(outlet_summary, "out/report/outlet_summary.csv")
+  readr::write_csv(length_summary, "out/report/length_summary.csv")
   
   make_histo(comp, "out/report/all_outlet.png", "out/report/all_length.png", lower_thresh_km, upper_thresh_km)
   make_histo(comp_big, "out/report/big_outlet.png", "out/report/big_length.png", lower_thresh_km, upper_thresh_km)
