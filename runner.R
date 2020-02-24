@@ -105,12 +105,12 @@ plan <- drake_plan(
   plot_lps_data_wbd = get_lp_plot_data_wbd(plot_lps_data, nhdplus_wbd, nhdplus_oldwbd_linked_points, national_viz_simp),
   plot_lps_data_all = get_lp_plot_data_rf1(plot_lps_data_wbd, rf1, rf1_nhdplus, national_viz_simp),
   plot_lps = get_lp_plots(plot_lps_data_all, 3, hu02, hu02_filter = "10",
-                          bb = c(xmin = -103.5, ymin = 44.5, xmax = -101.5, ymax = 47)),#,
+                          bb = c(xmin = -103.5, ymin = 44.5, xmax = -101.5, ymax = 47))#,
   # plot_hw = get_hw_fig(),
-  old_wbd_hupoints = write_sf(read_sf(file.path(nhdplus_oldwbd_out, 
-                                                "wbd_viz.gpkg"), "hu_outlets"), 
-                              file.path(nhdplus_oldwbd_out, 
-                                        "hu_outlets.gpkg"), "hu_outlets")
+  # old_wbd_hupoints = write_sf(read_sf(file.path(nhdplus_oldwbd_out, 
+  #                                               "wbd_viz.gpkg"), "hu_outlets"), 
+  #                             file.path(nhdplus_oldwbd_out, 
+  #                                       "hu_outlets.gpkg"), "hu_outlets")
 )
 
 config <- drake_config(plan = plan,
