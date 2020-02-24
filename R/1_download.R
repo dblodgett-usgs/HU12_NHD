@@ -36,6 +36,22 @@ get_fl <- function(out_dir) {
   
   fl <- list.files(out_dir, recursive = TRUE, full.names = TRUE)
   
+  for(i in seq_along(fl)) {
+    new_fi <- NULL
+    
+    if(grepl("nhdf", basename(fl[i]), ignore.case = FALSE)) new_fi <- gsub("nhdf", "NHDF", fl[i])
+    if(grepl("nhda", basename(fl[i]), ignore.case = FALSE)) new_fi <- gsub("nhda", "NHDA", fl[i])
+    if(grepl("nhdw", basename(fl[i]), ignore.case = FALSE)) new_fi <- gsub("nhdw", "NHDW", fl[i])
+    if(grepl("nhdp", basename(fl[i]), ignore.case = FALSE)) new_fi <- gsub("nhdp", "NHDP", fl[i])
+    if(grepl("nhdl", basename(fl[i]), ignore.case = FALSE)) new_fi <- gsub("nhdl", "NHDL", fl[i])
+    
+    if(!is.null(new_fi)) {
+      file.rename(fl[i], new_fi)
+      
+      fl[i] <- new_fi
+    }
+  }
+  
   fl[!fl %in% fl_zip]
 }
 
