@@ -57,7 +57,7 @@ plan <- drake_plan(
   wbd_dir = "data/wbd",
   wbd_zip_file = "WBD_National_GDB.zip",
   wbd_gdb_file = "WBD_National_GDB.gdb",
-  wbd_url = "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/WBD/National/GDB/National_WBD_GDB.zip",
+  wbd_url = "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/WBD/National/GDB/WBD_National_GDB.zip",
   ##### Static dependencies for newest WBD
   wbd_fixes = get_fixes("latest"),
   wbd_gdb_path = download_wbd(wbd_dir),
