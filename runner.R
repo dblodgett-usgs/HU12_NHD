@@ -78,8 +78,8 @@ plan <- drake_plan(
   # Create plots for newest WBD matches.
   plot_data = geom_plot_data(wbd, nhdplus_net, nhdplus_newwbd_hu_joiner, "^03.*"),
   out_png = create_png(plot_data, nhdplus_newwbd_hu_joiner, "png/"),
-  out_wbd_plot_data = get_wbd_plot_data(nhdplus_net, wbd_gdb_path, nhdplus_newwbd_plumbing, viz_simp, prj, cores, file.path(nhdplus_newwbd_out, "wbd_plots.gpkg")),
-  out_wbd_plots = plot_wbd(out_wbd_plot_data),
+  # out_wbd_plot_data = get_wbd_plot_data(nhdplus_net, wbd_gdb_path, nhdplus_newwbd_plumbing, viz_simp, prj, cores, file.path(nhdplus_newwbd_out, "wbd_plots.gpkg")),
+  # out_wbd_plots = plot_wbd(out_wbd_plot_data),
   # Match RF1 to NHDPlusV2
   rf1_out = "out/rf1_out",
   rf1_hw = get_hw_points(rf1),
