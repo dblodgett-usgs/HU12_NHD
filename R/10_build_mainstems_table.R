@@ -192,7 +192,7 @@ find_v1_mainstems <- function(v1, ms, cores = NA) {
   
   v1_dnhs <- left_join(v1_dnhs, select(v1, toCOMID = COMID, HYDROSEQ), 
                        by = c("DnHydroseq" = "HYDROSEQ")) %>%
-    filter(v1_dnhs, !toCOMID %in% div_heads$COMID)
+    filter(!toCOMID %in% div_heads$COMID)
   
   v1 <- left_join(v1, select(v1_dnhs, -toCOMID), by = "COMID")
   
