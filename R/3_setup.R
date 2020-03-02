@@ -11,6 +11,8 @@ rename_hr_fl = function(hr_vpus) {
 }
 
 prep_nhdplushr <- function(hr_fline) {
+  hr_fline <- filter(hr_fline, !is.na(.data$ToNode))
+  
   hr_fline <- left_join(st_set_geometry(hr_fline, NULL), 
                         select(st_set_geometry(hr_fline, NULL),
                                toCOMID = .data$COMID,
