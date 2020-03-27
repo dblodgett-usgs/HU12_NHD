@@ -142,7 +142,7 @@ par_linker <- function(lp_list) {
       dplyr::bind_cols(lp_list$hu_points) %>%
       dplyr::left_join(select(sf::st_set_geometry(lp_list$lp_geom, NULL), COMID, Hydroseq), by = "COMID") %>%
       dplyr::group_by(hu12) %>%
-      dplyr::filter(Hydroseq == min(Hydroseq))
+      dplyr::filter(Hydroseq == min(Hydroseq, na.rm = TRUE))
     
     if(any(group_size(linked) > 1)) {
       linked <- linked %>%
@@ -238,7 +238,7 @@ get_na_outlets_coords <- function(na_points, net) {
   na_outlets <- net %>%
     filter(LevelPathI %in% na_points$lp) %>%
     group_by(LevelPathI) %>%
-    filter(Hydroseq == min(Hydroseq)) %>%
+    filter(Hydroseq == min(Hydroseq, na.rm = TRUE)) %>%
     ungroup() %>%
     left_join(na_points, by = c("LevelPathI" = "lp"))
   

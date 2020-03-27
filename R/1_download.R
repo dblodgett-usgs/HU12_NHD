@@ -78,3 +78,20 @@ get_nhdp_crosswalk <- function(nhdplus_dir) {
   foreign::read.dbf(file.path(nhdplus_dir, "NHDPlusV1Network_V2Network_Crosswalk.dbf"))
 }
 
+get_merit_basins <- function(merit_dir) {
+  dir.create(merit_dir, recursive = TRUE, showWarnings = FALSE)
+  url <- "http://hydrology.princeton.edu/data/mpan/MERIT_Basins/MERIT_Hydro_v07_Basins_v01/zip/pfaf_level_01/"
+  f1 <- "pfaf_"
+  f2 <- "_MERIT_Hydro_v07_Basins_v01.zip"
+  out <- c()
+  for(i in 1:9) {
+    f <- file.path(merit_dir, paste0(f1, i, f2))
+    if(!file.exists(f)) {
+      download.file(paste0(url, f1, i, f2), 
+                    destfile = f)
+      unzip(f, exdir = merit_dir)
+    }
+    out <- c(out, f)
+  }
+}
+

@@ -112,14 +112,19 @@ gather_ds <- function(hu_data, huc12) {
 }
 
 get_head_hu <- function(lp_hu, fline_hu) {
-  lp_hu %>%
+  out <- lp_hu %>%
     left_join(select(fline_hu, Hydroseq,
                      nhd_LevelPath = LevelPathI, HUC12), by = "HUC12") %>%
     filter(LevelPathI == nhd_LevelPath) %>%
-    group_by(LevelPathI) %>%
-    filter(Hydroseq == max(Hydroseq)) %>%
-    ungroup() %>%
-    select(-Hydroseq, -nhd_LevelPath, head_HUC12 = HUC12)
+    group_by(LevelPathI)
+  
+  if(nrow(out) > 0) {
+    filter(out, Hydroseq == max(Hydroseq)) %>%
+      ungroup() %>%
+      select(-Hydroseq, -nhd_LevelPath, head_HUC12 = HUC12)
+  } else {
+    select(ungroup(out), -Hydroseq, -nhd_LevelPath, head_HUC12 = HUC12)
+  }
 }
 
 get_lp_hu <- function(fline_hu, start_comid) {
@@ -207,14 +212,19 @@ get_lp_hu <- function(fline_hu, start_comid) {
 
 get_next_lp <- function(fline_hu, nlp_tracker) {
   # Grab all the levelpaths that intersect the one we are on.
-  filter(fline_hu,
-                    fline_hu$DnLevelPat == nlp_tracker[1] &
-                      !LevelPathI == nlp_tracker[1]) %>%
-    group_by(LevelPathI) %>%
+  out <- filter(fline_hu,
+                fline_hu$DnLevelPat == nlp_tracker[1] &
+                  !LevelPathI == nlp_tracker[1]) %>%
+    group_by(LevelPathI)
+    
+  if(nrow(out) > 0) {
     # Pick only the outlet catchment/flowline
-    filter(Hydroseq == min(Hydroseq)) %>%
+    filter(out, Hydroseq == min(Hydroseq, na.rm = TRUE)) %>%
     # Sort from biggest drainage area to smallest.
     arrange(desc(denTotalAreaSqKM))
+  } else {
+    out
+  }
 }
 
 trace_hu_network <- function(hu, outlet_hu, fline_hu) {
@@ -300,9 +310,12 @@ correct_hu <- function(hu, fline_hu, funky_headwaters, add_checks) {
     # only modify ones not found to be on the main path in the loop above
     # and where the LevelPathI assigned is not equal to the original one assigned
     filter(main_LevelPathI == 0 & intersected_LevelPathI != check_LevelPathI) %>%
-    group_by(HUC12) %>%
+    group_by(HUC12)
+  
+  if(nrow(hu_trib) > 0) {
     # This grabs the biggest trib in the HU after filtering out the originally assigned one.
-    filter(check_LevelPathI == min(check_LevelPathI))
+    hu_trib <- filter(hu_trib, check_LevelPathI == min(check_LevelPathI))
+  }
 
   hu <- hu %>%
     left_join(select(hu_trib, HUC12, check_LevelPathI), by = "HUC12") %>%
@@ -455,7 +468,7 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/",
     all <- readr::read_csv(out_file)
   } else {
     
-    if(purge_temp) unlink(temp_dir, recursive = TRUE)
+    if(purge_temp) unlink(file.path(temp_dir, "*"), recursive = TRUE)
     
     if(is.null(net_int)) {
       net_int <- get_process_data(net, wbd, simp)
@@ -471,7 +484,7 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/",
                 by = c("TerminalPa" = "LevelPathI")) %>%
       filter(COMID %in% net_int$COMID) %>%
       group_by(TerminalPa) %>%
-      filter(Hydroseq == min(Hydroseq))
+      filter(Hydroseq == min(Hydroseq, na.rm= TRUE))
     
     if(cores > 1) {
       cl <- parallel::makeCluster(rep("localhost", cores), 
@@ -532,7 +545,7 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/",
       add_match$headwater_error <- FALSE
     }
     
-    all <- bind_rows(all, add_match)
+    all <- rbind(all, add_match)
     
     readr::write_csv(all, out_file)
     
@@ -558,13 +571,13 @@ get_process_data <- function(net, wbd, simp) {
 #' @import nhdplusTools sf dplyr
 prep_net <- function(net, simp) {
   
-  net_prep <- prepare_nhdplus(net, 
+  net_prep <- select(net, COMID, DnLevelPat, AreaSqKM) %>%
+    left_join(prepare_nhdplus(net, 
                               min_network_size = 0, # sqkm
                               min_path_length = 0, # sqkm
                               min_path_size = 0, # sqkm
                               purge_non_dendritic = TRUE,
-                              warn =  TRUE, error = FALSE) %>%
-    left_join(select(net, COMID, DnLevelPat, AreaSqKM), by = "COMID") %>%
+                              warn =  TRUE, error = FALSE), by = "COMID") %>%
     st_sf() %>%
     group_by(LevelPathI) %>%
     arrange(Hydroseq) %>%

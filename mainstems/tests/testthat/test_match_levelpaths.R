@@ -11,13 +11,13 @@ clean_huc12 <- function(huc12) {
 test_that("match levelpaths and get_linked_points", {
   source(system.file("extdata/new_hope_data.R", package = "nhdplusTools"))
 
-  suppressWarnings(net_prep <- prepare_nhdplus(new_hope_flowline,
+  suppressWarnings(net_prep <- select(new_hope_flowline, COMID, DnLevelPat, AreaSqKM) %>%
+    left_join(prepare_nhdplus(new_hope_flowline,
                               min_network_size = 20, # sqkm
                               min_path_length = 0, # sqkm
                               min_path_size = 10, # sqkm
                               purge_non_dendritic = TRUE,
-                              warn =  TRUE) %>%
-    left_join(select(new_hope_flowline, COMID, DnLevelPat, AreaSqKM), by = "COMID") %>%
+                              warn =  TRUE), by = "COMID") %>%
     st_sf() %>%
     group_by(LevelPathI) %>%
     arrange(Hydroseq) %>%
@@ -112,12 +112,13 @@ test_that("match levelpaths funky heatwater 4292649", {
   expect_true(matched$corrected_LevelPathI[matched$HUC12 == "010100040901"] == 150020702)
 
   # not much to do with this one. 010100040905 has multiple overlaps from the wrong watershed.
-  # expect_true(!150067066 %in% matched$corrected_LevelPathI)
-  expect_true(nrow(matched) == 153)
-  expect_true(sum(matched$headwater_error) == 2)
+  expect_true(!150067066 %in% matched$corrected_LevelPathI)
+  expect_equal(nrow(matched), 155)
+  expect_equal(sum(matched$headwater_error), 2)
 
   huc12 <- dplyr::select(clean_huc12(matched), corrected_LevelPathI, head_HUC12, outlet_HUC12) %>%
     dplyr::filter(!is.na(outlet_HUC12)) %>%
+    dplyr::filter(!is.na(corrected_LevelPathI)) %>%
     dplyr::distinct()
 
   expect_true(length(unique(huc12$corrected_LevelPathI)) == nrow(huc12))
@@ -181,8 +182,6 @@ test_that("match levelpaths doesn't miss levelpath 250031924", {
   matched <- match_levelpaths(net_prep, start_comid, add_checks = TRUE)
   
   expect_true(matched$corrected_LevelPathI[matched$HUC12 == "030402060502"] == "250031924")
-  
-  linked_points <- get_linked_points(matched, )
 })
 
 test_that("high_res problem oputlet", {

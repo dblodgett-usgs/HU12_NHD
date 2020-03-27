@@ -16,9 +16,10 @@ test_that("match flowpaths runs", {
                                           join = sf::st_within) %>%
                      st_set_geometry(NULL))
   
-  suppressWarnings(matched <- match_flowpaths(source_flowline = new_hope_flowline,
-                                              target_flowline = hr_flowline, 
-                                              hw_pair = hw_pair))
+  matched <- match_flowpaths(source_flowline = 
+                               select(new_hope_flowline, COMID, LevelPathI),
+                             target_flowline = hr_flowline, 
+                             hw_pair = hw_pair)
   
   expect_equal(sum(!is.na(matched$mr_LevelPathI)), 1021)
   
@@ -39,11 +40,14 @@ test_that("match flowpaths runs", {
 #   par(mar = c(0, 0, 0, 0))
 #   mr_lp <- filter(new_hope_flowline, LevelPathI <= lp)
 #   hr_lp <- filter(matched, mr_LevelPathI <= lp)
-#   plot(hr_flowline$geom, col = "blue", lwd = 0.5)
-#   plot(mr_lp$geom, col = "red", lwd = 3, add = TRUE)
-#   plot(hr_lp$geom, col = "black", add = TRUE)
+#   hr_lp <- filter(hr_flowline, COMID %in% hr_lp$member_NHDPlusID)
+#   plot(st_geometry(hr_flowline), col = "blue", lwd = 0.5)
+#   plot(st_geometry(mr_lp), col = "red", lwd = 3, add = TRUE)
+#   plot(st_geometry(hr_lp), col = "black", add = TRUE)
 #   dev.off()
 # }
+# 
+# gifski::gifski(list.files("./png/", full.names = TRUE), "test.gif")
 
 test_that("match flowpaths runs with RF1 and V2", {
   hw_pairs <- structure(list(ID = c(7849L, 7851L, 7853L, 7856L, 7857L, 7858L, 

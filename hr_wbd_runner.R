@@ -1,4 +1,4 @@
-source("R/setup.R")
+source("R/0_setup.R")
 source("R/3_setup.R")
 source("R/4_find_match.R")
 source("R/5_find_outlets.R")
@@ -8,14 +8,15 @@ source("R/10_build_mainstems_table.R")
 hr_hu02 <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", 
              "10", "11", "17", "12", "13", "14", "15", "16", "18")
 
-# hr_hu02 <- c("03")
+hr_hu02 <- c("07")
 
 pattern <- ".*[0-9][0-9][0-9][0-9].*.gdb$"
+pattern <- ".*0705.*.gdb$"
 
 hr_dir <- "data/hr/"
 out <- "out/nhdplushr_newwbd"
 
-wbd_fixes <- read_csv("fixes/hu_fixes.csv") %>%
+wbd_fixes <- read_csv("hu12_fixes/hu_fixes.csv") %>%
   bind_rows(list(HUC12 = "180102040904", TOHUC = "180102041003", comment = "misdirected"))
 
 cores <- NA
@@ -57,9 +58,7 @@ plan <- drake_plan(
 
 config <- drake_config(plan = plan,
                        memory_strategy = "autoclean",
-                       garbage_collection = TRUE, 
-                       parallelism = "future", 
-                       jobs = 8)
+                       garbage_collection = TRUE)
 
 future::plan(future::multiprocess)
 

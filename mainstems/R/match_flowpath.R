@@ -7,8 +7,9 @@
 #' @export
 get_hw_points <- function(fline) {
   if("COMID" %in% names(fline)) {
-    fline <- prepare_nhdplus(fline, 0, 0, 0, warn = FALSE) %>%
-      left_join(select(fline, COMID), by = "COMID") %>%
+    fline <- select(fline, COMID) %>%
+      right_join(prepare_nhdplus(fline, 0, 0, 0, warn = FALSE), 
+                by = "COMID") %>%
       st_sf() %>%
       filter(!COMID %in% toCOMID)
   } else {
@@ -201,7 +202,7 @@ match_flowpaths <- function(source_flowline, target_flowline, hw_pair, cores = N
   lp_df <- data.frame(headwater_COMID = hw_pair$COMID)
   lp_df["member_NHDPlusID"] <- list(dm_NHDPlusID)
 
-  lp_df <- unnest(lp_df)
+  lp_df <- unnest(lp_df, cols = c("member_NHDPlusID"))
 
   # Get MR levelpaths for headwater COMIDs
   hw_pair <- left_join(hw_pair, 
