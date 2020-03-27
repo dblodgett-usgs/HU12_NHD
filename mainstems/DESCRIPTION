@@ -3,15 +3,16 @@ Type: Package
 Title: helper functions for mainstems workflow
 Version: 0.0.1
 Authors@R: person("David", "Blodgett", role = c("aut", "cre"), email = "dblodgett@usgs.gov")
-Description: helper functions for mainstems workflow
+Description: Helper functions for "mainstems" workflow. This package
+  is preliminary and subject to revision.
 URL: https://github.com/dblodgett-usgs/HU12_NHD
 BugReports: https://github.com/dblodgett-usgs/HU12_NHD/issues
 Depends:
     R (>= 3.5.0)
-Imports: dplyr, sf, nhdplusTools, snow, parallel, magrittr, igraph, tidyr, nhdplusTools, pbapply
+Imports: dplyr, sf, nhdplusTools, snow, parallel, magrittr, igraph, tidyr, pbapply, readr
 Suggests: testthat, knitr, rmarkdown
 License: CC0
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0
 VignetteBuilder: knitr

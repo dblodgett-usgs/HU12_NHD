@@ -4,8 +4,16 @@
 \alias{par_match_levelpaths}
 \title{Parallel match levelpaths}
 \usage{
-par_match_levelpaths(net, wbd, simp, cores, temp_dir = "temp/",
-  out_file = "temp.csv", net_int = NULL)
+par_match_levelpaths(
+  net,
+  wbd,
+  simp,
+  cores,
+  temp_dir = "temp/",
+  out_file = "temp.csv",
+  net_int = NULL,
+  purge_temp = TRUE
+)
 }
 \arguments{
 \item{net}{NHDPlus network}
@@ -14,9 +22,16 @@ par_match_levelpaths(net, wbd, simp, cores, temp_dir = "temp/",
 
 \item{simp}{simplification in units of WBD and NHDPlus to limit memory usage}
 
+\item{cores}{Number of parallel processes to run. (1 for now process splitting)}
+
 \item{temp_dir}{directory to write temprary files to}
 
-\item{out_dir}{directory to check for cached output.}
+\item{out_file}{file to write results to.}
+
+\item{net_int}{intermediate process artifact to be used in drake plans output 
+of get_process_data}
+
+\item{purge_temp}{should temp directory be purged?}
 }
 \description{
 Parallel match levelpaths

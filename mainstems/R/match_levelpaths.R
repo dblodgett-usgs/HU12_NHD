@@ -36,18 +36,19 @@ match_levelpaths <- function(fline_hu, start_comid, add_checks = FALSE) {
   # create hu with head_hu for each levelpath. label levelpath as "intersected"
   #############################################################################
   hu <- hu %>%
-    right_join(distinct(select(fline_hu, HUC12, TOHUC)), by = "HUC12") %>%
+    right_join(distinct(select(fline_hu, .data$HUC12, .data$TOHUC)), by = "HUC12") %>%
     left_join(get_head_hu(hu, fline_hu), by = "LevelPathI") %>%
-    mutate(LevelPathI = as.numeric(LevelPathI)) %>%
-    rename(intersected_LevelPathI = LevelPathI)
+    mutate(LevelPathI = as.numeric(.data$LevelPathI)) %>%
+    rename(intersected_LevelPathI = .data$LevelPathI)
 
   # In case the outlet flowline spans multiple HUs near the outlet.
   outlet_hu <- sort(fline_hu[which(fline_hu$COMID == start_comid),]$TOHUC,
                      decreasing = FALSE)[1]
   
   if(is.na(outlet_hu)) { # This is sketchy but only for the old WBD.
-    outlet_hu <- filter(fline_hu, !is.na(HUC12) & HUC12 != "UNKNOWN" & TOHUC != "UNKNOWN") %>%
-      filter(Hydroseq == min(Hydroseq, na.rm = TRUE))
+    outlet_hu <- filter(fline_hu, !is.na(.data$HUC12) & .data$HUC12 != "UNKNOWN" & 
+                          .data$TOHUC != "UNKNOWN") %>%
+      filter(.data$Hydroseq == min(.data$Hydroseq, na.rm = TRUE))
     outlet_hu <- sort(outlet_hu$TOHUC, 
                       decreasing = TRUE)[1]
   }
@@ -66,22 +67,23 @@ match_levelpaths <- function(fline_hu, start_comid, add_checks = FALSE) {
   # main_LevelPath == 0 is a different case.
   #############################################################################
   correct_heads <- hu %>%
-    filter(intersected_LevelPathI == main_LevelPathI & main_LevelPathI != 0) %>%
-    select(main_LevelPathI, correct_head_HUC12 = head_HUC12) %>%
+    filter(.data$intersected_LevelPathI == .data$main_LevelPathI & .data$main_LevelPathI != 0) %>%
+    select(.data$main_LevelPathI, correct_head_HUC12 = .data$head_HUC12) %>%
     distinct()
 
   hu <- left_join(hu, correct_heads, by = "main_LevelPathI") %>%
-    mutate(head_HUC12 = ifelse(intersected_LevelPathI != main_LevelPathI & main_LevelPathI != 0,
-                               correct_head_HUC12,
-                               head_HUC12)) %>%
-    select(-correct_head_HUC12) %>%
+    mutate(head_HUC12 = ifelse(.data$intersected_LevelPathI != .data$main_LevelPathI & 
+                                 .data$main_LevelPathI != 0,
+                               .data$correct_head_HUC12,
+                               .data$head_HUC12)) %>%
+    select(-.data$correct_head_HUC12) %>%
     distinct()
 
   #############################################################################
   # Odd situation where a single headwater catchment intersects two HUs causes duplicate HUC12s
   #############################################################################
-  hu <- group_by(hu, HUC12) %>%
-    arrange(head_HUC12) %>%
+  hu <- group_by(hu, .data$HUC12) %>%
+    arrange(.data$head_HUC12) %>%
     filter(dplyr::row_number() == 1) %>%
     ungroup()
 
@@ -95,7 +97,7 @@ match_levelpaths <- function(fline_hu, start_comid, add_checks = FALSE) {
   #############################################################################
   # For outlets, just set main_levelpath to intersected.
   #############################################################################
-  hu <- mutate(hu, main_LevelPathI = ifelse(HUC12 == outlet_hu, intersected_LevelPathI, main_LevelPathI))
+  hu <- mutate(hu, main_LevelPathI = ifelse(.data$HUC12 == outlet_hu, .data$intersected_LevelPathI, .data$main_LevelPathI))
 
   #############################################################################
   # Run corrections on results
@@ -113,23 +115,23 @@ gather_ds <- function(hu_data, huc12) {
 
 get_head_hu <- function(lp_hu, fline_hu) {
   out <- lp_hu %>%
-    left_join(select(fline_hu, Hydroseq,
-                     nhd_LevelPath = LevelPathI, HUC12), by = "HUC12") %>%
-    filter(LevelPathI == nhd_LevelPath) %>%
-    group_by(LevelPathI)
+    left_join(select(fline_hu, .data$Hydroseq,
+                     nhd_LevelPath = .data$LevelPathI, .data$HUC12), by = "HUC12") %>%
+    filter(.data$LevelPathI == .data$nhd_LevelPath) %>%
+    group_by(.data$LevelPathI)
   
   if(nrow(out) > 0) {
-    filter(out, Hydroseq == max(Hydroseq)) %>%
+    filter(out, .data$Hydroseq == max(.data$Hydroseq)) %>%
       ungroup() %>%
-      select(-Hydroseq, -nhd_LevelPath, head_HUC12 = HUC12)
+      select(-.data$Hydroseq, -.data$nhd_LevelPath, head_HUC12 = .data$HUC12)
   } else {
-    select(ungroup(out), -Hydroseq, -nhd_LevelPath, head_HUC12 = HUC12)
+    select(ungroup(out), -.data$Hydroseq, -.data$nhd_LevelPath, head_HUC12 = .data$HUC12)
   }
 }
 
 get_lp_hu <- function(fline_hu, start_comid) {
 
-  nlp <- unique(filter(fline_hu, COMID == start_comid)[["LevelPathI"]])
+  nlp <- unique(filter(fline_hu, .data$COMID == start_comid)[["LevelPathI"]])
 
   check <- TRUE
   lp_hu <- list() # List to store levelpath/HU pairs
@@ -207,21 +209,21 @@ get_lp_hu <- function(fline_hu, start_comid) {
   return(data.frame(LevelPathI = names(lp_hu),
                     HUC12 = I(lp_hu),
                     stringsAsFactors = FALSE) %>%
-           tidyr::unnest(cols = c(HUC12)))
+           tidyr::unnest(cols = c("HUC12")))
 }
 
 get_next_lp <- function(fline_hu, nlp_tracker) {
   # Grab all the levelpaths that intersect the one we are on.
   out <- filter(fline_hu,
-                fline_hu$DnLevelPat == nlp_tracker[1] &
-                  !LevelPathI == nlp_tracker[1]) %>%
-    group_by(LevelPathI)
+                .data$DnLevelPat == nlp_tracker[1] &
+                  !.data$LevelPathI == nlp_tracker[1]) %>%
+    group_by(.data$LevelPathI)
     
   if(nrow(out) > 0) {
     # Pick only the outlet catchment/flowline
-    filter(out, Hydroseq == min(Hydroseq, na.rm = TRUE)) %>%
+    filter(out, .data$Hydroseq == min(.data$Hydroseq, na.rm = TRUE)) %>%
     # Sort from biggest drainage area to smallest.
-    arrange(desc(denTotalAreaSqKM))
+    arrange(desc(.data$denTotalAreaSqKM))
   } else {
     out
   }
@@ -229,7 +231,7 @@ get_next_lp <- function(fline_hu, nlp_tracker) {
 
 trace_hu_network <- function(hu, outlet_hu, fline_hu) {
   # Make sure we don't have the outlet in scope so the network breaks where we want.
-  hu_destructive <- filter(hu, !HUC12 %in% outlet_hu)
+  hu_destructive <- filter(hu, !.data$HUC12 %in% outlet_hu)
 
   hu[["main_LevelPathI"]] <- 0
   hu[["outlet_HUC12"]] <- ""
@@ -240,7 +242,7 @@ trace_hu_network <- function(hu, outlet_hu, fline_hu) {
 
   count <- 0
   for(lp in lps) {
-    lp <- filter(hu, intersected_LevelPathI == lp)
+    lp <- filter(hu, .data$intersected_LevelPathI == lp)
     # could gather_ds levelpath instead of hu but some toHUCs go outside the levelpath intersection!
     main_stem <- tryCatch(gather_ds(hu_destructive, lp$head_HUC12[1]),
                           error = function(e) {
@@ -256,15 +258,15 @@ trace_hu_network <- function(hu, outlet_hu, fline_hu) {
       if(!any(candidates %in% lp$HUC12) &
          length(main_stem) > 1) {
 
-        checker <- filter(fline_hu, HUC12 %in% candidates & LevelPathI == lp$intersected_LevelPathI[1])
+        checker <- filter(fline_hu, .data$HUC12 %in% candidates & .data$LevelPathI == lp$intersected_LevelPathI[1])
         if(!any(candidates %in% checker$HUC12)) {
           # Need to find the actual top HU12 first grab all that intersect this LP.
-          top_cat <- filter(fline_hu, LevelPathI == lp$intersected_LevelPathI[1]) %>%
+          top_cat <- filter(fline_hu, .data$LevelPathI == lp$intersected_LevelPathI[1]) %>%
             # In case there is a catchment completely outside the HU
             # We have to find the one that overlaps the boundary!!
-            group_by(COMID) %>% filter(n() > 1) %>% ungroup() %>%
+            group_by(.data$COMID) %>% filter(n() > 1) %>% ungroup() %>%
             # Now grab the top most row that isn't the one we found above.
-            filter(Hydroseq == max(Hydroseq) & HUC12 != lp$head_HUC12[1])
+            filter(.data$Hydroseq == max(.data$Hydroseq) & .data$HUC12 != lp$head_HUC12[1])
 
           # No test for this, but it shouldn't happen so throw error!!
           if(nrow(top_cat) > 1) {
@@ -284,14 +286,14 @@ trace_hu_network <- function(hu, outlet_hu, fline_hu) {
         }
       }
 
-      hu <- mutate(hu, main_LevelPathI = ifelse(HUC12 %in% main_stem &
-                                                  main_LevelPathI == 0,
+      hu <- mutate(hu, main_LevelPathI = ifelse(.data$HUC12 %in% main_stem &
+                                                  .data$main_LevelPathI == 0,
                                                 lp$intersected_LevelPathI[1],
-                                                main_LevelPathI),
-                   outlet_HUC12 = ifelse(HUC12 %in% main_stem,
+                                                .data$main_LevelPathI),
+                   outlet_HUC12 = ifelse(.data$HUC12 %in% main_stem,
                                          main_stem[length(main_stem)],
-                                         outlet_HUC12))
-      hu_destructive <- filter(hu_destructive, !HUC12 %in% main_stem)
+                                         .data$outlet_HUC12))
+      hu_destructive <- filter(hu_destructive, !.data$HUC12 %in% main_stem)
     }
     count <- count + 1
     if (count %% 100 == 0) {
@@ -306,144 +308,150 @@ correct_hu <- function(hu, fline_hu, funky_headwaters, add_checks) {
   # HUs found through intersection but not through main path trace belong with trib
   ################################################################################
   hu_trib <- hu %>%
-    left_join(distinct(select(fline_hu, HUC12, check_LevelPathI = LevelPathI)), by = "HUC12") %>%
+    left_join(distinct(select(fline_hu, .data$HUC12, check_LevelPathI = .data$LevelPathI)), 
+              by = "HUC12") %>%
     # only modify ones not found to be on the main path in the loop above
     # and where the LevelPathI assigned is not equal to the original one assigned
-    filter(main_LevelPathI == 0 & intersected_LevelPathI != check_LevelPathI) %>%
-    group_by(HUC12)
+    filter(.data$main_LevelPathI == 0 & .data$intersected_LevelPathI != .data$check_LevelPathI) %>%
+    group_by(.data$HUC12)
   
   if(nrow(hu_trib) > 0) {
     # This grabs the biggest trib in the HU after filtering out the originally assigned one.
-    hu_trib <- filter(hu_trib, check_LevelPathI == min(check_LevelPathI))
+    hu_trib <- filter(hu_trib, .data$check_LevelPathI == min(.data$check_LevelPathI))
   }
 
   hu <- hu %>%
-    left_join(select(hu_trib, HUC12, check_LevelPathI), by = "HUC12") %>%
+    left_join(select(hu_trib, .data$HUC12, .data$check_LevelPathI), by = "HUC12") %>%
     # Kill head_HUC12 which is now wrong.
-    mutate(head_HUC12 = ifelse(main_LevelPathI == 0, "", head_HUC12),
+    mutate(head_HUC12 = ifelse(.data$main_LevelPathI == 0, "", .data$head_HUC12),
            # The change to main_LevelPath makes this one an outlet.
-           outlet_HUC12 = ifelse(main_LevelPathI == 0 & !is.na(check_LevelPathI), HUC12, outlet_HUC12),
+           outlet_HUC12 = ifelse(.data$main_LevelPathI == 0 & !is.na(.data$check_LevelPathI), 
+                                 .data$HUC12, .data$outlet_HUC12),
            # Update the main_levelpath where needed per hu_trib from above.
-           main_LevelPathI = as.numeric(ifelse(main_LevelPathI == 0, check_LevelPathI, main_LevelPathI)),
-           main_LevelPathI = ifelse(is.na(main_LevelPathI), intersected_LevelPathI, main_LevelPathI)) %>%
-    select(-check_LevelPathI)
+           main_LevelPathI = as.numeric(ifelse(.data$main_LevelPathI == 0, .data$check_LevelPathI, 
+                                               .data$main_LevelPathI)),
+           main_LevelPathI = ifelse(is.na(.data$main_LevelPathI), 
+                                    .data$intersected_LevelPathI, .data$main_LevelPathI)) %>%
+    select(-.data$check_LevelPathI)
 
   ################################################################################
   # HUs found along trace but not along intersection need to be flagged and checked
   ################################################################################
-  hu_trib2 <- left_join(hu, select(fline_hu, HUC12, check_LevelPathI = LevelPathI), by = "HUC12") %>%
-    group_by(HUC12) %>%
+  hu_trib2 <- left_join(hu, select(fline_hu, .data$HUC12, check_LevelPathI = .data$LevelPathI), 
+                        by = "HUC12") %>%
+    group_by(.data$HUC12) %>%
     # When nothing in the group was found intersecting the levelpath
     # it should actually me on another level path.
-    filter(!any(main_LevelPathI == check_LevelPathI) & check_LevelPathI == min(check_LevelPathI)) %>%
+    filter(!any(.data$main_LevelPathI == .data$check_LevelPathI) & 
+             .data$check_LevelPathI == min(.data$check_LevelPathI)) %>%
     distinct() %>%
     ungroup()
 
   hu <- hu %>%
-    left_join(select(hu_trib2, HUC12, check_LevelPathI), by = "HUC12") %>%
-    mutate(main_LevelPathI = as.numeric(ifelse(!is.na(check_LevelPathI), check_LevelPathI, main_LevelPathI))) %>%
-    select(HUC12, TOHUC, intersected_LevelPathI, corrected_LevelPathI = main_LevelPathI, head_HUC12, outlet_HUC12)
+    left_join(select(hu_trib2, .data$HUC12, .data$check_LevelPathI), by = "HUC12") %>%
+    mutate(main_LevelPathI = as.numeric(ifelse(!is.na(.data$check_LevelPathI), 
+                                               .data$check_LevelPathI, .data$main_LevelPathI))) %>%
+    select(.data$HUC12, .data$TOHUC, .data$intersected_LevelPathI, 
+           corrected_LevelPathI = .data$main_LevelPathI, .data$head_HUC12, .data$outlet_HUC12)
 
-  hu <- filter(hu, !is.na(intersected_LevelPathI))
+  hu <- filter(hu, !is.na(.data$intersected_LevelPathI))
 
   ################################################################################
   # Update head_hu where they were broken before
   ################################################################################
   head_hu <- hu %>%
-    filter(head_HUC12 == "") %>%
-    select(LevelPathI = corrected_LevelPathI, HUC12) %>%
+    filter(.data$head_HUC12 == "") %>%
+    select(LevelPathI = .data$corrected_LevelPathI, .data$HUC12) %>%
     get_head_hu(fline_hu) %>%
-    select(LevelPathI, update_head_HUC12 = head_HUC12)
+    select(.data$LevelPathI, update_head_HUC12 = .data$head_HUC12)
 
   hu <- hu %>%
     left_join(head_hu, by = c("corrected_LevelPathI" = "LevelPathI")) %>%
-    mutate(head_HUC12 = ifelse(head_HUC12 == "", update_head_HUC12, head_HUC12)) %>%
-    select(-update_head_HUC12)
+    mutate(head_HUC12 = ifelse(.data$head_HUC12 == "", 
+                               .data$update_head_HUC12, .data$head_HUC12)) %>%
+    select(-.data$update_head_HUC12)
 
   # need to deduplicate resulting head_HUC12 in some edge cases
-  lp_head <- select(hu, corrected_LevelPathI, head_HUC12) %>%
+  lp_head <- select(hu, .data$corrected_LevelPathI, .data$head_HUC12) %>%
     distinct() %>%
-    group_by(corrected_LevelPathI) %>%
-    arrange(head_HUC12) %>%
+    group_by(.data$corrected_LevelPathI) %>%
+    arrange(.data$head_HUC12) %>%
     filter(dplyr::row_number() == 1) %>%
     ungroup()
 
   hu <- hu %>%
-    left_join(select(lp_head, corrected_LevelPathI, updated_head_HUC12 = head_HUC12),
+    left_join(select(lp_head, .data$corrected_LevelPathI, updated_head_HUC12 = .data$head_HUC12),
               by = "corrected_LevelPathI") %>%
-    select(-head_HUC12) %>% rename(head_HUC12 = updated_head_HUC12)
+    select(-.data$head_HUC12) %>% rename(head_HUC12 = .data$updated_head_HUC12)
 
   ################################################################################
   # When HUC12 doesn't have anything going to it -- force it to be a head_HUC12
   ################################################################################
   broken_head <- !hu$HUC12 %in% hu$TOHUC & !hu$head_HUC12 == hu$HUC12
-  hu <- mutate(hu, head_HUC12 = ifelse(broken_head, HUC12, head_HUC12),
-               corrected_LevelPathI = ifelse(broken_head, -1, corrected_LevelPathI)) # sketchy but should work?
+  hu <- mutate(hu, head_HUC12 = ifelse(broken_head, .data$HUC12, .data$head_HUC12),
+               corrected_LevelPathI = ifelse(broken_head, -1, .data$corrected_LevelPathI)) # sketchy but should work?
 
   ################################################################################
   # Fix up outlets that got broken in edge cases above.
   ################################################################################
   if(any(hu$outlet_HUC12 == "")) {
-    lp_outlet <- select(hu, corrected_LevelPathI, outlet_HUC12) %>%
-      filter(outlet_HUC12 != "") %>%
+    lp_outlet <- select(hu, .data$corrected_LevelPathI, .data$outlet_HUC12) %>%
+      filter(.data$outlet_HUC12 != "") %>%
       distinct()
 
     hu <- hu %>%
-      left_join(select(lp_outlet, corrected_LevelPathI, updated_outlet_HUC12 = outlet_HUC12),
+      left_join(select(lp_outlet, .data$corrected_LevelPathI, updated_outlet_HUC12 = .data$outlet_HUC12),
                 by = "corrected_LevelPathI") %>%
-      select(-outlet_HUC12) %>% rename(outlet_HUC12 = updated_outlet_HUC12) %>%
-      filter(outlet_HUC12 != "" | corrected_LevelPathI == -1) %>%
-      mutate(outlet_HUC12 = ifelse(corrected_LevelPathI == -1, HUC12, outlet_HUC12))
+      select(-.data$outlet_HUC12) %>% rename(outlet_HUC12 = .data$updated_outlet_HUC12) %>%
+      filter(.data$outlet_HUC12 != "" | .data$corrected_LevelPathI == -1) %>%
+      mutate(outlet_HUC12 = ifelse(.data$corrected_LevelPathI == -1, .data$HUC12, .data$outlet_HUC12))
   }
 
-  lp_outlet <- select(hu, corrected_LevelPathI, outlet_HUC12) %>%
+  lp_outlet <- select(hu, .data$corrected_LevelPathI, .data$outlet_HUC12) %>%
     distinct() %>%
-    group_by(corrected_LevelPathI) %>%
-    arrange(dplyr::desc(outlet_HUC12)) %>%
+    group_by(.data$corrected_LevelPathI) %>%
+    arrange(dplyr::desc(.data$outlet_HUC12)) %>%
     filter(dplyr::row_number() == 1) %>%
     ungroup()
 
   hu <- hu %>%
-    left_join(select(lp_outlet, corrected_LevelPathI, updated_outlet_HUC12 = outlet_HUC12),
+    left_join(select(lp_outlet, .data$corrected_LevelPathI, updated_outlet_HUC12 = .data$outlet_HUC12),
               by = "corrected_LevelPathI") %>%
-    select(-outlet_HUC12) %>% 
-    rename(outlet_HUC12 = updated_outlet_HUC12) %>%
-    filter(corrected_LevelPathI != -1) %>%
+    select(-.data$outlet_HUC12) %>% 
+    rename(outlet_HUC12 = .data$updated_outlet_HUC12) %>%
+    filter(.data$corrected_LevelPathI != -1) %>%
     distinct()
 
   ################################################################################
   # Add checks
   ################################################################################
   if(add_checks) {
-    hu <- mutate(hu, trib_intersect = HUC12 %in% hu_trib$HUC12,
-                 trib_no_intersect = HUC12 %in% hu_trib2$HUC12,
-                 headwater_error = HUC12 %in% funky_headwaters)
+    hu <- mutate(hu, trib_intersect = .data$HUC12 %in% hu_trib$HUC12,
+                 trib_no_intersect = .data$HUC12 %in% hu_trib2$HUC12,
+                 headwater_error = .data$HUC12 %in% funky_headwaters)
   }
   return(hu)
 }
 
 par_match_levelpaths_fun <- function(start_comid, net_atts, net_prep, wbd_atts, temp_dir) {
-  library(nhdplusTools)
-  library(sf)
-  library(dplyr)
-  
-  out_file <- file.path(temp_dir, paste0(start_comid, ".rds"))
+
+    out_file <- file.path(temp_dir, paste0(start_comid, ".rds"))
   
   if(!file.exists(out_file)) {
 
-    all_comid <- get_UT(net_atts, start_comid)
+    all_comid <- nhdplusTools::get_UT(net_atts, start_comid)
     
-    sub_net <- filter(net_prep, COMID %in% all_comid)
+    sub_net <- dplyr::filter(net_prep, .data$COMID %in% all_comid)
     
     out <- list(NULL)
     
     if(nrow(sub_net) > 0) {
-      sub_net <- bind_rows(sub_net,
-                           select(filter(wbd_atts,
-                                         !HUC12 %in% sub_net$HUC12),
-                                  HUC12, TOHUC))
+      sub_net <- dplyr::bind_rows(sub_net,
+                           dplyr::select(filter(wbd_atts,
+                                         !.data$HUC12 %in% sub_net$HUC12),
+                                         .data$HUC12, .data$TOHUC))
       
-      out <- list(match_levelpaths(sub_net, start_comid, add_checks = TRUE))
+      out <- list(mainstems::match_levelpaths(sub_net, start_comid, add_checks = TRUE))
     }
     
     saveRDS(out, out_file)
@@ -456,11 +464,16 @@ par_match_levelpaths_fun <- function(start_comid, net_atts, net_prep, wbd_atts, 
 #' @param net NHDPlus network
 #' @param wbd WBD HU12 polygons
 #' @param simp simplification in units of WBD and NHDPlus to limit memory usage
+#' @param cores Number of parallel processes to run. (1 for now process splitting)
 #' @param temp_dir directory to write temprary files to
-#' @param out_dir directory to check for cached output.
+#' @param out_file file to write results to.
+#' @param net_int intermediate process artifact to be used in drake plans output 
+#' of get_process_data
+#' @param purge_temp should temp directory be purged?
 #' @export
 par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", 
-                                 out_file = "temp.csv", net_int = NULL, purge_temp = TRUE) {
+                                 out_file = "temp.csv", net_int = NULL, 
+                                 purge_temp = TRUE) {
   
   if(names(net) == "NHDFlowline") net <- net$NHDFlowline
   
@@ -478,13 +491,13 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/",
     wbd <- st_set_geometry(wbd, NULL)
     
     terminals <- net %>%
-      select(TerminalPa) %>%
+      select(.data$TerminalPa) %>%
       distinct() %>%
-      left_join(select(net, COMID, LevelPathI, Hydroseq), 
+      left_join(select(net, .data$COMID, .data$LevelPathI, .data$Hydroseq), 
                 by = c("TerminalPa" = "LevelPathI")) %>%
-      filter(COMID %in% net_int$COMID) %>%
-      group_by(TerminalPa) %>%
-      filter(Hydroseq == min(Hydroseq, na.rm= TRUE))
+      filter(.data$COMID %in% net_int$COMID) %>%
+      group_by(.data$TerminalPa) %>%
+      filter(.data$Hydroseq == min(.data$Hydroseq, na.rm= TRUE))
     
     if(cores > 1) {
       cl <- parallel::makeCluster(rep("localhost", cores), 
@@ -523,18 +536,18 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/",
     # Once everything is done there are some orphans where only one
     # matching network element was found. We can just add those.
     missed <- net_int %>%
-      filter(!HUC12 %in% all$HUC12) %>%
-      group_by(HUC12)
+      filter(!.data$HUC12 %in% all$HUC12) %>%
+      group_by(.data$HUC12)
     
     add_match <- missed %>%
       filter(n() == 1) %>%
       ungroup()
     
     missed <- missed %>%
-      filter(!HUC12 %in% add_match$HUC12)
+      filter(!.data$HUC12 %in% add_match$HUC12)
     
-    add_match <- select(add_match, HUC12 = HUC12, TOHUC = TOHUC, 
-                        intersected_LevelPathI = LevelPathI)
+    add_match <- select(add_match, HUC12 = .data$HUC12, TOHUC = .data$TOHUC, 
+                        intersected_LevelPathI = .data$LevelPathI)
     
     if(nrow(add_match) > 0) {
       add_match$corrected_LevelPathI <- add_match$intersected_LevelPathI
@@ -560,7 +573,7 @@ get_process_data <- function(net, wbd, simp) {
   
   net_prep <- prep_net(net, simp)
   
-  wbd <- select(st_simplify(wbd, dTolerance = simp), HUC12, TOHUC)
+  wbd <- select(st_simplify(wbd, dTolerance = simp), .data$HUC12, .data$TOHUC)
   
   net_prep <- st_join(net_prep, wbd) %>%
     st_set_geometry(NULL)
@@ -571,7 +584,7 @@ get_process_data <- function(net, wbd, simp) {
 #' @import nhdplusTools sf dplyr
 prep_net <- function(net, simp) {
   
-  net_prep <- select(net, COMID, DnLevelPat, AreaSqKM) %>%
+  net_prep <- select(net, .data$COMID, .data$DnLevelPat, .data$AreaSqKM) %>%
     left_join(prepare_nhdplus(net, 
                               min_network_size = 0, # sqkm
                               min_path_length = 0, # sqkm
@@ -579,15 +592,15 @@ prep_net <- function(net, simp) {
                               purge_non_dendritic = TRUE,
                               warn =  TRUE, error = FALSE), by = "COMID") %>%
     st_sf() %>%
-    group_by(LevelPathI) %>%
-    arrange(Hydroseq) %>%
-    mutate(DnLevelPat = DnLevelPat[1]) %>%
+    group_by(.data$LevelPathI) %>%
+    arrange(.data$Hydroseq) %>%
+    mutate(DnLevelPat = .data$DnLevelPat[1]) %>%
     ungroup()
   
   net_prep["denTotalAreaSqKM"] <-
     nhdplusTools::calculate_total_drainage_area(select(st_set_geometry(net_prep, NULL),
-                                         ID = COMID, toID = toCOMID,
-                                         area = AreaSqKM))
+                                         ID = .data$COMID, toID = .data$toCOMID,
+                                         area = .data$AreaSqKM))
   
   net_prep <- st_simplify(net_prep, dTolerance = simp)
   

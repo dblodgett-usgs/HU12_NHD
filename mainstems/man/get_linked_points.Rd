@@ -9,9 +9,9 @@ get_linked_points(hu_lp, net, wbd, exclude, cores = NA)
 \arguments{
 \item{hu_lp}{data.frame as returned by `match_levelpaths`}
 
-\item{net}{sf data.frame ...}
+\item{net}{sf data.frame NHDPlus Flowlines}
 
-\item{wbd}{sf data.frame ...}
+\item{wbd}{sf data.frame HU12s}
 
 \item{exclude}{character vector of HUs to exclude from consideration}
 
@@ -29,9 +29,10 @@ library(sf)
 library(nhdplusTools)
 
 source(system.file("extdata/new_hope_data.R", package = "nhdplusTools"))
-suppressWarnings(net_prep <- prepare_nhdplus(new_hope_flowline, 20, 0, 10) \%>\%
-                   left_join(select(new_hope_flowline, COMID, DnLevelPat,
-                   AreaSqKM), by = "COMID") \%>\%
+suppressWarnings(net_prep <- select(new_hope_flowline, COMID, DnLevelPat, 
+                   AreaSqKM) \%>\%
+                   right_join(prepare_nhdplus(new_hope_flowline, 20, 0, 10), 
+                   by = "COMID") \%>\%
                    st_sf() \%>\%
                    group_by(LevelPathI) \%>\%
                    arrange(Hydroseq) \%>\%

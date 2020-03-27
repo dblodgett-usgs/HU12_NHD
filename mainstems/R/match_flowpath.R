@@ -1,19 +1,19 @@
 #' Get headwater points
 #' @description Returns headwater locations for line geometries 
 #' @param fline flowline data.frame from NHDPlus or with an ID and toID column.
-#' @importFrom sf st_sf st_coordinates st_as_sf st_crs
+#' @importFrom sf st_sf st_coordinates st_as_sf st_crs st_drop_geometry
 #' @importFrom dplyr left_join select filter group_by ungroup bind_cols
 #' @importFrom nhdplusTools prepare_nhdplus
 #' @export
 get_hw_points <- function(fline) {
   if("COMID" %in% names(fline)) {
-    fline <- select(fline, COMID) %>%
+    fline <- select(fline, .data$COMID) %>%
       right_join(prepare_nhdplus(fline, 0, 0, 0, warn = FALSE), 
                 by = "COMID") %>%
       st_sf() %>%
-      filter(!COMID %in% toCOMID)
+      filter(!.data$COMID %in% .data$toCOMID)
   } else {
-    fline <- filter(fline, !ID %in% toID)
+    fline <- filter(fline, !.data$ID %in% .data$toID)
   }
 
   outlets <-  fline %>%
@@ -21,22 +21,22 @@ get_hw_points <- function(fline) {
     as.data.frame()
   
   if("L2" %in% names(outlets)) {
-    outlets <- group_by(outlets, L2)
+    outlets <- group_by(outlets, .data$L2)
   } else {
-    outlets <- group_by(outlets, L1)
+    outlets <- group_by(outlets, .data$L1)
   }
   
   outlets <- outlets %>%
     filter(row_number() == round(n()/2)) %>%
     ungroup() %>%
-    select(X, Y) %>%
+    select(.data$X, .data$Y) %>%
     st_as_sf(coords = c("X", "Y"))
 
   if("COMID" %in% names(fline)) {
-    bind_cols(outlets, select(st_set_geometry(fline, NULL), COMID)) %>%
+    bind_cols(outlets, select(st_drop_geometry(fline), .data$COMID)) %>%
       st_sf(crs = st_crs(fline))
   } else {
-    bind_cols(outlets, select(st_set_geometry(fline, NULL), ID)) %>%
+    bind_cols(outlets, select(st_drop_geometry(fline), .data$ID)) %>%
       st_sf(crs = st_crs(fline))
   }
 }
@@ -80,10 +80,10 @@ clean_geom <- function(x) {
 #'                               join = sf::st_within), NULL)
 #'
 #' lp_df_df <- match_flowpaths(new_hope_flowline, hr_flowline, hw_pair)
-#' matched <- dplyr::left_join(dplyr::select(hr_flowline, NHDPlusID),
+#' matched <- dplyr::left_join(dplyr::select(hr_flowline, COMID),
 #'                             dplyr::select(lp_df_df, member_NHDPlusID,
 #'                                           MR_LevelPathI = mr_LevelPathI), 
-#'                                           by = c("NHDPlusID" = "member_NHDPlusID"))
+#'                                           by = c("COMID" = "member_NHDPlusID"))
 #'
 #' lp <- min(matched$MR_LevelPathI, na.rm = TRUE)
 #' mr_lp <- dplyr::filter(new_hope_flowline, LevelPathI <= lp)
@@ -100,7 +100,8 @@ match_flowpaths <- function(source_flowline, target_flowline, hw_pair, cores = N
   
   if("ID" %in% names(target_flowline)) {
   
-    hw_pair <- filter(hw_pair, !is.na(FEATUREID) & !is.na(ID) & FEATUREID %in% source_flowline$COMID)
+    hw_pair <- filter(hw_pair, !is.na(.data$FEATUREID) & !is.na(.data$ID) & 
+                        .data$FEATUREID %in% source_flowline$COMID)
   
     source_flowline <- source_flowline[source_flowline$TerminalPa %in% 
                                          source_flowline[source_flowline$COMID %in% 
@@ -119,7 +120,7 @@ match_flowpaths <- function(source_flowline, target_flowline, hw_pair, cores = N
                                       function(x, fa) get_dwn(x, fa),
                                       fa = target_flowline, cl = cl))
     
-    lpt <- unnest(lpt, cols = c(member_ID))
+    lpt <- unnest(lpt, cols = c("member_ID"))
     
     lps <- data.frame(headwater_COMID = hw_pair$FEATUREID)
     
@@ -132,71 +133,72 @@ match_flowpaths <- function(source_flowline, target_flowline, hw_pair, cores = N
                                          function(x, fa) get_DM(fa, x),
                                          fa = source_flowline, cl = cl))
     
-    lps <- unnest(lps, cols = c(member_COMID))
+    lps <- unnest(lps, cols = c("member_COMID"))
     
     # With all navigations downstream main we need to find the 
     # dominant downstream levelpath for each headwater location.
     # First filter all results so we have only the top of each 
     # levelpath found.
     lps <- lps %>%
-      left_join(select(source_flowline, LevelPathI, Hydroseq, COMID), 
+      left_join(select(source_flowline, .data$LevelPathI, .data$Hydroseq, .data$COMID), 
                 by = c("member_COMID" = "COMID")) %>%
-      group_by(LevelPathI) %>%
-      filter(Hydroseq == max(Hydroseq)) %>% 
+      group_by(.data$LevelPathI) %>%
+      filter(.data$Hydroseq == max(.data$Hydroseq)) %>% 
       ungroup()
     
     # Also grab the most upstream by headwater_Hydroseq to deal with assumption noted below.
-    lps <- left_join(lps, select(source_flowline, COMID, headwater_Hydroseq = Hydroseq),
+    lps <- left_join(lps, select(source_flowline, .data$COMID, headwater_Hydroseq = .data$Hydroseq),
                      by = c("headwater_COMID" = "COMID")) %>%
-      group_by(LevelPathI) %>%
-      filter(headwater_Hydroseq == max(headwater_Hydroseq)) %>%
+      group_by(.data$LevelPathI) %>%
+      filter(.data$headwater_Hydroseq == max(.data$headwater_Hydroseq)) %>%
       ungroup()
     
     # Now for each headwater, choose the minimum (largest) levelpath.
     # This assumes that the largest levelpaths extend upstream of the
     # rest of the network.
-    lps <- group_by(lps, headwater_COMID) %>%
-      filter(LevelPathI == min(LevelPathI)) %>%
-      select(-Hydroseq, mr_LevelPathI = LevelPathI, -member_COMID, -headwater_Hydroseq) %>%
+    lps <- group_by(lps, .data$headwater_COMID) %>%
+      filter(.data$LevelPathI == min(.data$LevelPathI)) %>%
+      select(-.data$Hydroseq, mr_LevelPathI = .data$LevelPathI, 
+             -.data$member_COMID, -.data$headwater_Hydroseq) %>%
       ungroup()
     
-    target_flowline <- select(clean_geom(target_flowline), ID)
-    source_flowline <- distinct(select(source_flowline, COMID, LevelPathI))
+    target_flowline <- select(clean_geom(target_flowline), .data$ID)
+    source_flowline <- distinct(select(source_flowline, .data$COMID, .data$LevelPathI))
     
     gc()
     
     hw_pair <- hw_pair %>%
-      rename(COMID = FEATUREID) %>%
+      rename(COMID = .data$FEATUREID) %>%
       left_join(lps, by = c("COMID" = "headwater_COMID"))
     
     # Join so we have RF1 IDs found downstream of a given MR LevelPath headwater.
-    lpt <- left_join(lpt, select(hw_pair, -ID),
+    lpt <- left_join(lpt, select(hw_pair, -.data$ID),
                      by = c("headwater_COMID" = "COMID"))
     
-    group_by(lpt, member_ID) %>%
-      filter(!is.na(mr_LevelPathI)) %>%
-      filter(mr_LevelPathI == min(mr_LevelPathI)) %>%
-      ungroup() -> t
+    group_by(lpt, .data$member_ID) %>%
+      filter(!is.na(.data$mr_LevelPathI)) %>%
+      filter(.data$mr_LevelPathI == min(.data$mr_LevelPathI)) %>%
+      ungroup()
       
   } else {
 
   target_flowline <- select(clean_geom(target_flowline),
-                            NHDPlusID = COMID, 
-                            HydroSeq = Hydroseq, 
-                            DnHydroSeq = DnHydroseq, 
-                            LevelPathI = LevelPathI, 
-                            DnLevelPat = DnLevelPat)
+                            NHDPlusID = .data$COMID, 
+                            HydroSeq = .data$Hydroseq, 
+                            DnHydroSeq = .data$DnHydroseq, 
+                            LevelPathI = .data$LevelPathI, 
+                            DnLevelPat = .data$DnLevelPat)
   
   gc()
 
-  hw_pair <- rename(hw_pair, NHDPlusID = FEATUREID) %>%
-    filter(NHDPlusID %in% target_flowline$NHDPlusID)
+  hw_pair <- rename(hw_pair, NHDPlusID = .data$FEATUREID) %>%
+    filter(.data$NHDPlusID %in% target_flowline$NHDPlusID)
   
   dm_NHDPlusID <- lapply(hw_pair$NHDPlusID,
                          function(x, fa) get_DM(fa, x),
                          fa = target_flowline)
   
-  target_flowline <- select(target_flowline, NHDPlusID)
+  target_flowline <- select(target_flowline, .data$NHDPlusID)
 
   # Expand into data.frame
   lp_df <- data.frame(headwater_COMID = hw_pair$COMID)
@@ -206,19 +208,19 @@ match_flowpaths <- function(source_flowline, target_flowline, hw_pair, cores = N
 
   # Get MR levelpaths for headwater COMIDs
   hw_pair <- left_join(hw_pair, 
-                       rename(source_flowline, mr_LevelPathI = LevelPathI), 
+                       rename(source_flowline, mr_LevelPathI = .data$LevelPathI), 
                        by = "COMID")
 
   # Join so we have HR NHDPlusIDs found downstream of a given MR LevelPath headwater.
-  lp_df <- left_join(lp_df, select(hw_pair, -NHDPlusID), 
+  lp_df <- left_join(lp_df, select(hw_pair, -.data$NHDPlusID), 
                      by = c("headwater_COMID" = "COMID"))
 
-  group_by(lp_df, member_NHDPlusID) %>% # Group by level paths present in HR.
-    filter(mr_LevelPathI == min(mr_LevelPathI)) %>% # Filter so only one (largest) MR levelpath is linked to each HR path.
+  group_by(lp_df, .data$member_NHDPlusID) %>% # Group by level paths present in HR.
+    filter(.data$mr_LevelPathI == min(.data$mr_LevelPathI)) %>% # Filter so only one (largest) MR levelpath is linked to each HR path.
     ungroup() %>%
     left_join(target_flowline,
               by = c("member_NHDPlusID" = "NHDPlusID")) %>%
-    select(-headwater_COMID)
+    select(-.data$headwater_COMID)
   }
 }
 

@@ -32,16 +32,16 @@ complexity that occurs near drainage divides.
 source(system.file("extdata/nhdplushr_data.R", package = "mainstems"))
 source(system.file("extdata/new_hope_data.R", package = "nhdplusTools"))
 
-hr_catchment <- nhdplusTools:::rename_nhdplus(hr_catchment)
+hr_catchment <- nhdplusTools::align_nhdplus_names(hr_catchment)
 hw_pair <- sf::st_set_geometry(sf::st_join(get_hw_points(new_hope_flowline),
                               dplyr::select(hr_catchment, FEATUREID),
                               join = sf::st_within), NULL)
 
 lp_df_df <- match_flowpaths(new_hope_flowline, hr_flowline, hw_pair)
-matched <- dplyr::left_join(dplyr::select(hr_flowline, NHDPlusID),
+matched <- dplyr::left_join(dplyr::select(hr_flowline, COMID),
                             dplyr::select(lp_df_df, member_NHDPlusID,
                                           MR_LevelPathI = mr_LevelPathI), 
-                                          by = c("NHDPlusID" = "member_NHDPlusID"))
+                                          by = c("COMID" = "member_NHDPlusID"))
 
 lp <- min(matched$MR_LevelPathI, na.rm = TRUE)
 mr_lp <- dplyr::filter(new_hope_flowline, LevelPathI <= lp)
