@@ -103,7 +103,7 @@ get_lp_points <- function(hu_lp, net, wbd, exclude) {
   
   na_points <- distinct(na_points)
   
-  both <- filter(na_points, .data$hu12 %in% .data$hu12) # Only broken border HUs included.
+  both <- filter(na_points, .data$hu12 %in% lp_points$hu12) # Only broken border HUs included.
   
   na_points <- filter(na_points, !.data$hu12 %in% both)
   lp_points <- filter(lp_points, !.data$hu12 %in% both)
@@ -325,9 +325,31 @@ run_lp <- function(lp_id, net, hu_lp, wbd) {
 #' @noRd
 get_points_out <- function(hu_lp, net, wbd, exclude) {
   
-  hu_lp <- group_by(hu_lp, .data$HUC12) %>%
-    filter(.data$corrected_LevelPathI == min(.data$corrected_LevelPathI)) %>%
+  # Three cases where there are duplicates.
+  # one or more terminates in HU one or more don't
+  # all terminate in HU
+  # None terminate in HU
+  terminates_in_hu <- filter(hu_lp, .data$head_HUC12 == .data$outlet_HUC12)
+  exits_head_hu <- filter(hu_lp, .data$head_HUC12 != .data$outlet_HUC12)
+
+  term_and_exits <- group_by(hu_lp, .data$HUC12) %>%
+    filter(dplyr::n() > 1 &&
+             any(.data$HUC12 %in% terminates_in_hu$HUC12) && 
+             any(.data$HUC12 %in% exits_head_hu$HUC12))
+  
+  all_in_or_out <- group_by(hu_lp, .data$HUC12) %>%
+    filter(!.data$HUC12 %in% term_and_exits$HUC12 &
+             .data$corrected_LevelPathI == min(.data$corrected_LevelPathI)) %>%
     ungroup()
+           
+  if(nrow(term_and_exits) > 0) {
+    term_and_exits <- term_and_exits %>%
+      filter(.data$head_HUC12 != .data$outlet_HUC12) %>%
+      filter(.data$corrected_LevelPathI == min(.data$corrected_LevelPathI)) %>%
+      ungroup()
+  }
+  
+  hu_lp <- bind_rows(all_in_or_out, term_and_exits)
   
   wbd <- filter(wbd, !.data$HUC12 %in% exclude)
   hu_lp <- filter(hu_lp, !.data$HUC12 %in% exclude)
@@ -349,16 +371,19 @@ get_points_out <- function(hu_lp, net, wbd, exclude) {
 #' Get level path HUC outlet points
 #' @noRd
 get_lp_hu_points <- function(points, prj) {
-  suppressWarnings(lp_points <- lapply(names(points),
-                      function(lp, points) {
-                        hu_points <- bind_rows(lapply(points[lp], hu_points_fun))
-                        
-                        hu_points[["lp"]] <- lp
-                        
-                        return(hu_points)
-                      }, points = points) %>%
-    bind_rows() %>%
-    st_sf())
+  suppressWarnings({
+    lp_points <- lapply(names(points),
+                        function(lp, points) {
+                          hu_points <- try(bind_rows(lapply(points[lp], hu_points_fun)))
+                          
+                          if(!is(hu_points, "data.frame")) browser()
+                          
+                          hu_points[["lp"]] <- lp
+                          
+                          return(hu_points)
+                        }, points = points) 
+    lp_points <- st_sf(do.call(rbind, lp_points))
+  })
   
   st_crs(lp_points) <- prj
   

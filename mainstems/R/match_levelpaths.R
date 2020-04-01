@@ -531,7 +531,7 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/",
     names(all) <- gsub(temp_dir, "", names(all))
     names(all) <- gsub(".rds", "", names(all))
     
-    all <- bind_rows(all)
+    all <- do.call(rbind, all)
     
     # Once everything is done there are some orphans where only one
     # matching network element was found. We can just add those.

@@ -6,6 +6,8 @@ get_wbd_matched <- function(all, wbd) {
     select(corrected_LevelPathI, group_size) %>%
     distinct()
   
+  if(is.numeric(all$HUC12)) all$HUC12 <- as.character(all$HUC12)
+  
   return(left_join(wbd, select(all, -TOHUC), by = "HUC12"))
 }
 
