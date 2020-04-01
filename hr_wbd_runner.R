@@ -8,10 +8,7 @@ source("R/10_build_mainstems_table.R")
 hr_hu02 <- c("01", "02", "03", "04", "05", "06", "07", "08", "09", 
              "10", "11", "17", "12", "13", "14", "15", "16", "18")
 
-hr_hu02 <- c("07")
-
 pattern <- ".*[0-9][0-9][0-9][0-9].*.gdb$"
-pattern <- ".*0705.*.gdb$"
 
 hr_dir <- "data/hr/"
 out <- "out/nhdplushr_newwbd"
@@ -25,7 +22,7 @@ min_size_sqkm <- 6
 proc_simp <- 2
 temp_dir <- paste0("temp", hr_hu02, "/")
 wbd_dir <- "data/wbd"
-wbd_url <- "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/WBD/National/GDB/NATIONAL_WBD_GDB.zip"
+wbd_url <- "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/WBD/National/GDB/WBD_National_GDB.zip"
 
 plan <- drake_plan(
   wbd_gdb_path = download_wbd(wbd_dir, url = wbd_url),
