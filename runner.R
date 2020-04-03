@@ -60,9 +60,9 @@ plan <- drake_plan(
   ##### Static dependencies for newest WBD
   wbd_fixes = get_fixes("latest"),
   wbd_gdb_path = download_wbd(wbd_dir),
-  wbd_exclusions = get_exclusions(wbd_gdb_path),
-  wbd = get_wbd(wbd_gdb_path, wbd_fixes, prj),
-  hu02 = st_simplify(st_transform(read_sf(wbd_gdb_path, "WBDHU2"), prj), dTolerance = national_viz_simp),
+  wbd_exclusions = get_exclusions(wbd_gdb_path[1]),
+  wbd = get_wbd(wbd_gdb_path[1], wbd_fixes, prj),
+  hu02 = st_simplify(st_transform(read_sf(wbd_gdb_path[1], "WBDHU2"), prj), dTolerance = national_viz_simp),
   ##### Match newest WBD to NHDPlusV2.
   nhdplus_newwbd_out = "out/nhdplus_newwbd/",
   nhdplus_newwbd_hu_joiner = par_match_levelpaths(nhdplus_net, wbd, proc_simp, cores, temp_dir, file.path(nhdplus_newwbd_out,
