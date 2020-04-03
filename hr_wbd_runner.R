@@ -26,8 +26,8 @@ wbd_url <- "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/WBD/Nati
 
 plan <- drake_plan(
   wbd_gdb_path = download_wbd(wbd_dir, url = wbd_url),
-  wbd_exclusions = get_exclusions(wbd_gdb_path),
-  wbd = get_wbd(wbd_gdb_path, wbd_fixes, prj),
+  wbd_exclusions = get_exclusions(wbd_gdb_path[1]),
+  wbd = get_wbd(wbd_gdb_path[1], wbd_fixes, prj),
   hr_path = target(download_nhdplushr(hr_dir, hr_huset),
                       transform = map(hr_huset = !!hr_hu02)),
   hr_net = target(get_nhdplushr(hr_path, 
