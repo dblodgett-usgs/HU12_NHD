@@ -1,6 +1,36 @@
 get_fixes <- function(version) {
   if(version == "latest") {
-    fixes <- readr::read_csv("hu12_fixes/hu_fixes.csv") %>%
+    fixes <- structure(list(HUC12 = c("090203160905", "031300130600", "100500080502", 
+                                      "100500010301", "101900180706", "030201040502", "080500030503", 
+                                      "101701030209", "080500030402", "080202030604", "080202031010", 
+                                      "080202030902", "080202031205", "010300010510", "170900040201", 
+                                      "120500011102", "120500010805", "120500010804", "120500011005", 
+                                      "080302071803", "171200080301", "180102041405", "180102041403", 
+                                      "180102041003", "180300090403", "080302090101", "100600030702", 
+                                      "080302070702", "170200150602", "170900080501"), 
+                            TOHUC = c("090203160906", "OCEAN", "100500080504", "100500010302", "102001010305", "030102050803", 
+                                      "080500030504", "101701030210", "080500030403", "080202030608", 
+                                      "080202031013", "080202031302", "080202031202", "010300010603", 
+                                      "170900040202", "120500011301", "120500010804", "120500010906", 
+                                      "120500011101", "080302090605", "171200080401", "180102041406", 
+                                      "180102041405", "180102041403", "180300090503", "080302090201", 
+                                      "100600030704", "080302070703", "170200150605", "170900080504"), 
+                            comment = c("circular", "circular", "circular", "circular", 
+                                        "Major route error", "current routing follows man-made waterbody?", 
+                                        "better follow river path, could also redelineate to fix", "Shouldn't be CLOSED BASIN", 
+                                        "misdirected", "misdirected", "misdirected", "misdirected", "misdirected", 
+                                        "misdirected", "misdirected", "misdirected", "misdirected", "misdirected", 
+                                        "misdirected", "misdirected", "misdirected", "problem closed basin", 
+                                        "problem delineation -- ideal fix would redelineate", "problem closed basin", 
+                                        "Misdirected?", "Misdirected", "Misdirected", "Misdirected", 
+                                        "Not a closed basin", "Misdirected")), 
+                       class = c("tbl_df", "tbl", "data.frame"), 
+                       row.names = c(NA, -30L), 
+                       spec = structure(list(cols = list(HUC12 = structure(list(), class = c("collector_character", "collector")), 
+                                             TOHUC = structure(list(), class = c("collector_character", "collector")), 
+                                             comment = structure(list(), class = c("collector_character", "collector"))), 
+                                             default = structure(list(), class = c("collector_guess", "collector")), 
+                                             skip = 1), class = "col_spec")) %>%
       bind_rows(list(HUC12 = "180102040904", TOHUC = "180102041003", comment = "misdirected"))
   } else if(version == "nhdplusv2") {
   ##### Fixes #####
