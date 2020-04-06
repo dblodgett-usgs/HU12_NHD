@@ -57,19 +57,19 @@ This repository holds work in progress code meant to match NHDPlus and Watershed
 
 Outputs:  
 - NHDPlusV2 Flowlines and NHDPlusV2 Snapshot HUC12
- - csv to join NHDPlusV2 mainstems to HUC12
- - complete gpkg for visualization of results
+  - csv to join NHDPlusV2 mainstems to HUC12
+  - complete gpkg for visualization of results
 - NHDPlusV2 Flowlines and 2020 Snapshot HUC12 
- - csv to join NHDPlusV2 mainstems to HUC12
- - complete gpkg for visualization of results
+  - csv to join NHDPlusV2 mainstems to HUC12
+  - complete gpkg for visualization of results
 - NHDPlusV2 Flowlines and RF1
- - csv to join NHDPlusV2 mainstems to RF1
- - complete gpkg for visualization of results
+  - csv to join NHDPlusV2 mainstems to RF1
+  - complete gpkg for visualization of results
 - NHDPlusV2 Flowlines and 2020 Snapshot NHDPlusHR
- - csv with NHDPlusHR flowlines matched to NHDPlusV2 levelpaths
- - csv comparing best-match NHDPlusHR and NHDPlusV2 paths
+  - csv with NHDPlusHR flowlines matched to NHDPlusV2 levelpaths
+  - csv comparing best-match NHDPlusHR and NHDPlusV2 paths
 - NHDPlusHR Flowlines and 2020 Snapshot HUC12
- - csv to join NHDPlusHR mainstems to HUC12s
+  - csv to join NHDPlusHR mainstems to HUC12s
 
 ![](img/1002.gif)  
 ![](img/fig1.png)
