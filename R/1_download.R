@@ -9,6 +9,8 @@ compile_v1_fline <- function(out_dir, out_gpkg) {
   if(!file.exists(out_gpkg) || !layer %in% st_layers(out_gpkg)) {
     fl <- get_fl(out_dir)
     
+    fl <- unique(fl)
+    
     fline_files <- fl[grepl("nhdflowline.shp", fl, ignore.case = TRUE)]
     vaa_files <- fl[grepl(".*VAA.dbf$", fl, ignore.case = TRUE)]
     
