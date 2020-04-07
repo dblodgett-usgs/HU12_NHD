@@ -14,7 +14,11 @@ compile_v1_fline <- function(out_dir, out_gpkg) {
     
     flines <- lapply(fline_files, function(x) st_zm(read_sf(x)))
     
-    flines[[21]] <- dplyr::select(flines[[21]], -Shape_Le_1)
+    for(i in 1:length(flines)) {
+      if("Shape_Le_1" %in% names(flines[[i]])){
+        flines[[i]] <- dplyr::select(flines[[i]], -Shape_Le_1)
+      }
+    }
     
     flines <- st_sf(bind_rows(flines))
     
