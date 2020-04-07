@@ -12,7 +12,9 @@ compile_v1_fline <- function(out_dir, out_gpkg) {
     fline_files <- fl[grepl("nhdflowline.shp", fl, ignore.case = TRUE)]
     vaa_files <- fl[grepl(".*VAA.dbf$", fl, ignore.case = TRUE)]
     
-    flines <- lapply(fline_files, read_sf)
+    flines <- lapply(fline_files, function(x) st_zm(read_sf(x)))
+    
+    flines[[21]] <- dplyr::select(flines[[21]], -Shape_Le_1)
     
     flines <- st_sf(bind_rows(flines))
     

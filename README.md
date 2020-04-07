@@ -70,6 +70,8 @@ Outputs:
   - csv comparing best-match NHDPlusHR and NHDPlusV2 paths
 - NHDPlusHR Flowlines and 2020 Snapshot HUC12
   - csv to join NHDPlusHR mainstems to HUC12s
+- All Input Datasets
+  - csv containing one row per mainstem in NHDPlusV2 and all matched mainstems from others.
 
 ![](img/1002.gif)  
 ![](img/fig1.png)
