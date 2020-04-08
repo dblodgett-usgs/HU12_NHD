@@ -72,15 +72,31 @@ Outputs:
   - csv to join NHDPlusHR mainstems to HUC12s
 - All Input Datasets
   - csv containing one row per mainstem in NHDPlusV2 and all matched mainstems from others.
-
+  
+# Figures
 ![](img/1002.gif)  
-![](img/fig1.png)
-![](img/fig2.png)
-![](img/fig3.png)
-![](img/fig4.png)
-![](img/fig5.png)  
-![](img/example.gif)
-![](img/animation.gif)
+Animation showing one HU04 (1002) of NHDPlusHR matched to NHDPlusV2 levelpaths. Light blue background is the complete NHDPlusV2 network. Order is from lowest NHDPlusV2 Levelpath to highest. Source code in `9_viz_plot.R` `create_plot_frames()` function.  
+
+![](img/fig1.png)  
+One mainstem (blue) and its drainage basin (black polygon).  
+
+![](img/fig2.png)  
+One mainstem, its drainage basin, and incremental catchments for one main stem.
+
+![](img/fig3.png)  
+All tributaries and the headwater hydrologic unit of one mainstem.
+
+![](img/fig4.png)  
+Drainage basins for all tributaries to one mainstem (grey).
+
+![](img/fig_hw.png)  
+NHDPlusV2 (blue) and NHDPlusHR (black) compared to one RF1 headwater segment (red). NHDPlusV2 levelpath matched to RF1 headwater (thick blue).
+
+![](img/example.gif)  
+Mainstems and incremental catchments for each mainstem animating toward a complete drainage basin's network.
+
+![](img/animation.gif)  
+Low resolution RF1 network (grey and red overlay) and matched higher resolution mainstems from NHDPlusV2 (black). Illustrates how headwater representation changes as a result of network resolution.
 
 # Project Layout
 
