@@ -97,19 +97,15 @@ plan <- drake_plan(
                                          st_set_geometry(nhdplus_wbd, NULL),
                                          st_set_geometry(wbd, NULL)),
   mainstems_with_v1 = add_v1(mainstems_table, nhdpv1_mapped),
-  v1_mainstems = find_v1_mainstems(nhdpv1_atts, mainstems_with_v1, 9),
+  v1_mainstems = find_v1_mainstems(nhdpv1_atts, mainstems_with_v1, 6),
   mainstems_table_summary = make_ms_summary(mainstems_table, nhdplus_net_atts),
   hist_list = get_hist_list(mainstems_table_summary),
   plot_lps_data = get_lp_plot_data(nhdplus_net, mainstems_table_summary, national_viz_simp),
   plot_lps_data_wbd = get_lp_plot_data_wbd(plot_lps_data, nhdplus_wbd, nhdplus_oldwbd_linked_points, national_viz_simp),
   plot_lps_data_all = get_lp_plot_data_rf1(plot_lps_data_wbd, rf1, rf1_nhdplus, national_viz_simp),
   plot_lps = get_lp_plots(plot_lps_data_all, 3, hu02, hu02_filter = "10",
-                          bb = c(xmin = -103.5, ymin = 44.5, xmax = -101.5, ymax = 47))#,
-  # plot_hw = get_hw_fig(),
-  # old_wbd_hupoints = write_sf(read_sf(file.path(nhdplus_oldwbd_out, 
-  #                                               "wbd_viz.gpkg"), "hu_outlets"), 
-  #                             file.path(nhdplus_oldwbd_out, 
-  #                                       "hu_outlets.gpkg"), "hu_outlets")
+                          bb = c(xmin = -103.5, ymin = 44.5, xmax = -101.5, ymax = 47)),
+  plot_hw = get_hw_fig()
 )
 
 config <- drake_config(plan = plan,
@@ -117,5 +113,3 @@ config <- drake_config(plan = plan,
                        garbage_collection = TRUE)
 
 make(config = config)
-
-

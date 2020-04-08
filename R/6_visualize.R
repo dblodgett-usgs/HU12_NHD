@@ -76,7 +76,7 @@ geom_plot_data <- function(hu12, net, lookup, filter) {
   
   net <- filter(net, LevelPathI %in% hu_grouped$corrected_LevelPathI)
   
-  return(list(net = net, hu_grouped = hu_grouped, lookup = lookup, hu12_boundaries = hu12_boundaries))
+  return(list(net = net, hu_grouped = hu_grouped, lookup = lookup, hu12_boundaries = hu12_boundaries, hu12 = hu12))
 }
 
 create_png <- function(plot_data, hu_joiner, out_folder) {
@@ -130,15 +130,6 @@ create_png <- function(plot_data, hu_joiner, out_folder) {
     i <- i + 1
   }
   
-  plotter <- function(i) {
-    png(filename = paste0(out_folder, i, ".png"), width = 450, height = 768, units = "px")
-    par(mar=c(0, 0, 0, 0))
-    plot(st_geometry(viz_basinboundary), lwd = 0.5)
-    plot(st_geometry(viz_mainstem), col = "blue", add = TRUE)
-    plot(st_geometry(viz_hydrounits), lwd = 0.5, border = "grey", col = NA, add = TRUE)
-    dev.off()
-  }
-  
   joiner <- hu_joiner %>%
     filter(grepl("^03.*", HUC12)) %>%
     select(HUC12, intersected_LevelPathI, corrected_LevelPathI)
@@ -146,58 +137,57 @@ create_png <- function(plot_data, hu_joiner, out_folder) {
   intersected <- left_join(select(hu12_boundaries, HUC12), joiner)
   
   levelpath <- 290003311
+  
+  hu_grouped <- st_simplify(hu_grouped, dTolerance =500)
+  net <- st_simplify(net, dTolerance = 500)
+  
   viz_hydrounits <- filter(hu_grouped, corrected_LevelPathI %in% 0)
   viz_mainstem <- filter(net, LevelPathI %in% levelpath)
   mainstem_hus <- distinct(filter(lookup, corrected_LevelPathI %in% levelpath))
-  viz_basinboundary <- filter(hu12_boundaries, HUC12 %in% unique(mainstem_hus$outlet_HUC12))
+  viz_basinboundary <- st_simplify(
+    filter(hu12_boundaries, HUC12 %in% unique(mainstem_hus$outlet_HUC12)), 
+    dTolerance = 100)
   
-  plotter("fig1")
-  intersected_hydrounits <- filter(intersected, intersected_LevelPathI %in% levelpath)
-  corrected_hydrounits <- filter(intersected, corrected_LevelPathI %in% levelpath)
+  png(filename = paste0(out_folder, "fig1", ".png"), width = 450, height = 768, units = "px")
+  par(mar=c(0, 0, 0, 0))
+  plot(st_geometry(viz_basinboundary), lwd = 1)
+  plot(st_geometry(viz_mainstem), col = "blue", lwd = 1, add = TRUE)
+  plot(st_geometry(viz_hydrounits), lwd = 0.5, border = "grey", col = NA, add = TRUE)
+  dev.off()
+  
+  # intersected_hydrounits <- filter(intersected, intersected_LevelPathI %in% levelpath)
+  corrected_hydrounits <- filter(plot_data$hu12, HUC12 %in% mainstem_hus$HUC12)
   
   png(filename = paste0(out_folder, "fig2.png"), width = 450, height = 768, units = "px")
   par(mar=c(0, 0, 0, 0))
   plot(st_geometry(viz_basinboundary), lwd = 0.5)
-  plot(st_geometry(intersected_hydrounits), lwd = 0.1, border = "grey", col = NA, add = TRUE)
+  plot(st_geometry(corrected_hydrounits), lwd = 1, border = "black", col = "lightblue", add = TRUE)
   plot(st_geometry(viz_mainstem), col = "blue", add = TRUE)
-  plot(st_geometry(intersected_hydrounits), lwd = 0.5, border = "grey", col = NA, add = TRUE)
   dev.off()
   
   head_hu <- unique(filter(lookup, corrected_LevelPathI == levelpath)$head_HUC12)
-  viz_head <- filter(hu12_boundaries, HUC12 == head_hu)
-  
+  viz_head <- filter(plot_data$hu12, HUC12 == head_hu)
+
+  next_lp <- filter(lp_dnlp, DnLevelPat %in% levelpath)$LevelPathI
+  levelpath <- unique(c(levelpath, next_lp))
+  viz_mainstem <- filter(net, LevelPathI %in% levelpath)
+  next_basin <- filter(intersected, corrected_LevelPathI %in% next_lp)
+    
   png(filename = paste0(out_folder, "fig3.png"), width = 450, height = 768, units = "px")
   par(mar=c(0, 0, 0, 0))
-  plot(st_geometry(viz_basinboundary), lwd = 0.5)
-  plot(st_geometry(intersected_hydrounits), lwd = 0.1, border = "grey", col = NA, add = TRUE)
+  plot(st_geometry(viz_basinboundary), lwd = 0.75)
+  plot(st_geometry(corrected_hydrounits), lwd = 1, border = "black", col = "lightblue", add = TRUE)
   plot(st_geometry(viz_mainstem), col = "blue", add = TRUE)
-  plot(st_geometry(intersected_hydrounits), lwd = 0.5, border = "grey", col = NA, add = TRUE)
-  plot(st_geometry(viz_head), lwd = 0.5, border = "red", col = "NA", add = TRUE)
+  plot(st_geometry(viz_head), lwd = 1, border = "red", col = "NA", add = TRUE)
   dev.off()
   
   png(filename = paste0(out_folder, "fig4.png"), width = 450, height = 768, units = "px")
   par(mar=c(0, 0, 0, 0))
-  plot(st_geometry(viz_basinboundary), lwd = 0.5)
-  plot(st_geometry(intersected_hydrounits), lwd = 0.5, border = "grey", col = NA, add = TRUE)
-  plot(st_geometry(viz_mainstem), col = "blue", add = TRUE)
-  plot(st_geometry(corrected_hydrounits), lwd = 0.5, border = "black", col = NA, add = TRUE)
-  plot(st_geometry(viz_head), lwd = 0.5, border = "red", col = "NA", add = TRUE)
-  dev.off()
-  
-  next_lp <- filter(lp_dnlp, DnLevelPat %in% levelpath)$LevelPathI
-  levelpath <- unique(c(levelpath, next_lp))
-  viz_mainstem <- filter(net, LevelPathI %in% levelpath)
-  
-  png(filename = paste0(out_folder, "fig5.png"), width = 450, height = 768, units = "px")
-  par(mar=c(0, 0, 0, 0))
-  plot(st_geometry(viz_basinboundary), lwd = 0.5)
-  plot(st_geometry(intersected_hydrounits), lwd = 0.5, border = "grey", col = NA, add = TRUE)
-  plot(st_geometry(corrected_hydrounits), lwd = 0.5, border = "black", col = NA, add = TRUE)
+  plot(st_geometry(viz_basinboundary), lwd = 0.75)
+  plot(st_geometry(corrected_hydrounits), lwd = 1, border = "black", col = "lightblue", add = TRUE)
+  plot(st_geometry(next_basin), lwd = 1, border = "black", col = "lightgrey", add = TRUE)
   plot(st_geometry(viz_mainstem), col = "blue", add = TRUE)
   dev.off()
-  
-  #######
-  
   
   plotter <- function(i) {
     png(filename = paste0(out_folder, i, ".png"), width = 512, height = 768, units = "px")
@@ -395,11 +385,11 @@ get_hw_fig <- function() {
   rf1 <- sf::read_sf(system.file("extdata/rf1_test.gpkg", package = "mainstems"), "rf1_test")
   nhdp <- sf::read_sf(system.file("extdata/rf1_test.gpkg", package = "mainstems"), "nhdp_flowline")
   hr <- nhdplusTools::download_nhdplushr("data/hr/", hu_list = "03")
-  hr <- nhdplusTools::get_nhdplushr(hr_dir = hr, out_gpkg = "data/0314.gpkg", pattern = "0314_HU4_GDB.gdb")
-  hr <- st_zm(read_sf(hr, "NHDFlowline"))
-  hr_outlet <- hr$HydroSeq[which(hr$GNIS_ID == "00288720" & hr$TerminalFl == 1)]
+  hr <- nhdplusTools::get_nhdplushr(hr_dir = hr, out_gpkg = "data/0314.gpkg", pattern = "0314.gdb")
+  hr <- sf::st_zm(hr$NHDFlowline)
+  hr_outlet <- hr$Hydroseq[which(hr$GNIS_ID == "00288720" & hr$TerminalFl == 1)]
   hr_sub <- hr[hr$TerminalPa == hr_outlet, ]
-  hr_sub <- st_transform(hr_sub, st_crs(nhdp))
+  hr_sub <- sf::st_transform(hr_sub, sf::st_crs(nhdp))
   
   hw_pairs <- structure(list(ID = c(7849L, 7851L, 7853L, 7856L, 7857L, 7858L, 
                                     7860L, 7862L, 7863L, 7864L), 
