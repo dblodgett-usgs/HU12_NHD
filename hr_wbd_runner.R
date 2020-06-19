@@ -1,4 +1,5 @@
 source("R/0_setup.R")
+source("R/2_fixes.R")
 source("R/3_setup.R")
 source("R/4_find_match.R")
 source("R/5_find_outlets.R")
@@ -13,7 +14,7 @@ pattern <- ".*[0-9][0-9][0-9][0-9].*.gdb$"
 hr_dir <- "data/hr/"
 out <- "out/nhdplushr_newwbd"
 
-wbd_fixes <- read_csv("hu12_fixes/hu_fixes.csv") %>%
+wbd_fixes <- get_fixes("latest") %>%
   bind_rows(list(HUC12 = "180102040904", TOHUC = "180102041003", comment = "misdirected"))
 
 cores <- NA
@@ -37,20 +38,21 @@ plan <- drake_plan(
                                min_size_sqkm = min_size_sqkm, simp = proc_simp, 
                                proj = prj, check_terminals = TRUE),
                      transform = map(hr_path, .id = FALSE), hpc = FALSE),
-  hu_joiner = target(par_match_levelpaths(hr_net, wbd, proc_simp, 1, temp_dir, 
+  hr_net_fix = target(fix_hr(hr_net), transform = map(hr_net, .id = FALSE), hpc = FALSE),
+  hu_joiner = target(par_match_levelpaths(hr_net_fix, wbd, proc_simp, 1, temp_dir, 
                                           !!file.path(out, sprintf("joiner_%s.csv", .id_chr))),
-                     transform = map(hr_net, prep_data, temp_dir = !!temp_dir, .id = FALSE), hpc = TRUE),
-  lp_points = target(get_lp_points(hu_joiner, hr_net, wbd, wbd_exclusions),
-                     transform = map(hu_joiner, hr_net, .id = FALSE), hpc = TRUE),
-  na_ol = target(get_na_outlets_coords(lp_points, hr_net),
+                     transform = map(hr_net_fix, prep_data, temp_dir = !!temp_dir, .id = FALSE), hpc = TRUE),
+  lp_points = target(get_lp_points(hu_joiner, hr_net_fix, wbd, wbd_exclusions),
+                     transform = map(hu_joiner, hr_net_fix, .id = FALSE), hpc = TRUE),
+  na_ol = target(get_na_outlets_coords(lp_points, hr_net_fix),
                             transform = map(lp_points, .id = FALSE), hpc = TRUE),
-  in_list = target(get_in_list(lp_points, hr_net),
+  in_list = target(get_in_list(lp_points, hr_net_fix),
                    transform = map(lp_points, .id = FALSE), hpc = TRUE),
   lp = target(get_linked_points_scalable(in_list, na_ol, cores, !!file.path(out, sprintf("%s.gpkg", hr_hu02))),
               transform = map(in_list, na_ol, hr_hu02 = !!hr_hu02, .id = FALSE), hpc = TRUE),
-  write = target(write_output_gpkg(hr_net, wbd, hu_joiner, lp, prj, 30,
+  write = target(write_output_gpkg(hr_net_fix, wbd, hu_joiner, lp, prj, 30,
                                    file_out(!!file.path(out, sprintf("%s.gpkg", hr_hu02)))),
-                 transform = map(hr_net, hu_joiner, lp, hr_hu02 = !!hr_hu02,.id = FALSE), hpc = TRUE)
+                 transform = map(hr_net_fix, hu_joiner, lp, hr_hu02 = !!hr_hu02,.id = FALSE), hpc = TRUE)
 )
 
 config <- drake_config(plan = plan,

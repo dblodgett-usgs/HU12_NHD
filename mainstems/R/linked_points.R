@@ -322,6 +322,7 @@ run_lp <- function(lp_id, net, hu_lp, wbd) {
 
 #' get all points
 #' @description deduplicates everything and executes run_lp for all levelpaths
+#' @importFrom nhdplusTools get_node
 #' @noRd
 get_points_out <- function(hu_lp, net, wbd, exclude) {
   
@@ -329,8 +330,21 @@ get_points_out <- function(hu_lp, net, wbd, exclude) {
   # one or more terminates in HU one or more don't
   # all terminate in HU
   # None terminate in HU
-  terminates_in_hu <- filter(hu_lp, .data$head_HUC12 == .data$outlet_HUC12)
-  exits_head_hu <- filter(hu_lp, .data$head_HUC12 != .data$outlet_HUC12)
+  outlets <- net %>%
+    filter(.data$Hydroseq == .data$LevelPathI) %>% # only level path outlet flowlines
+    select(.data$LevelPathI)
+  
+  outlets <- st_sf(st_drop_geometry(outlets), 
+                   geom = st_geometry(get_node(outlets, position = "end")))
+  
+  outlets <- st_join(outlets, select(wbd, .data$HUC12))
+  
+  outlets <- st_drop_geometry(rename(outlets, point_outlet = HUC12))
+  
+  hu_lp <- left_join(hu_lp, outlets, by = c("corrected_LevelPathI" = "LevelPathI"))
+  
+  terminates_in_hu <- filter(hu_lp, .data$head_HUC12 == .data$point_outlet)
+  exits_head_hu <- filter(hu_lp, .data$head_HUC12 != .data$point_outlet)
 
   term_and_exits <- group_by(hu_lp, .data$HUC12) %>%
     filter(dplyr::n() > 1 &&
@@ -344,12 +358,13 @@ get_points_out <- function(hu_lp, net, wbd, exclude) {
            
   if(nrow(term_and_exits) > 0) {
     term_and_exits <- term_and_exits %>%
-      filter(.data$head_HUC12 != .data$outlet_HUC12) %>%
+      filter(.data$head_HUC12 != .data$point_outlet) %>%
       filter(.data$corrected_LevelPathI == min(.data$corrected_LevelPathI)) %>%
       ungroup()
   }
   
-  hu_lp <- bind_rows(all_in_or_out, term_and_exits)
+  hu_lp <- bind_rows(all_in_or_out, term_and_exits) %>%
+    select(-.data$point_outlet)
   
   wbd <- filter(wbd, !.data$HUC12 %in% exclude)
   hu_lp <- filter(hu_lp, !.data$HUC12 %in% exclude)

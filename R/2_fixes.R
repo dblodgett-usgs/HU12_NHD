@@ -517,4 +517,10 @@ get_fixes <- function(version) {
   return(fixes)
 }
 
-
+fix_hr <- function(hr_net) {
+  if("NHDFlowline" %in% names(hr_net)) hr_net <- hr_net$NHDFlowline
+  
+  hr_net$StreamCalc[hr_net$COMID == 22000400022387] <- 7
+  
+  hr_net
+}
