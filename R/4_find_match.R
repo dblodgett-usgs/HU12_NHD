@@ -26,8 +26,10 @@ get_hu_outlets <- function(hu12, linked_points, add_to_file = NA) {
     left_join(hu08, by = c("HUC12" = "outlet_HUC12")) %>%
     left_join(hu10, by = c("HUC12" = "outlet_HUC12"))
   
+  linked_points <- st_transform(linked_points, 4326)
+  
   if(!is.na(add_to_file)) {
-    write_sf(linked_points, add_to_file, "hu_outlets")
+    write_sf(linked_points, add_to_file, "hu_points")
   }
   
   linked_points

@@ -6,3 +6,11 @@ test_that("headwater terminals discriminate correctly", {
   expect_equal(lp$na[lp$na$hu12 == "170501030202", ]$lp,   55000700000702)
 
 })
+
+test_that("outlet linke points", {
+  load("data/lp_outlet_point.rda")
+
+  point <- get_lp_points(joiner, net, hu, "")  
+  
+  expect_equal(nrow(point$lp), 4)
+})

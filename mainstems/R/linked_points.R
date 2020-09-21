@@ -295,11 +295,18 @@ hu_points_fun <- function(hp) {
 run_lp <- function(lp_id, net, hu_lp, wbd) {
   out <- NULL
   tryCatch({
-    lp <- net[net$LevelPathI == lp_id, ] %>%
-      st_geometry()
+    lp <- net[net$LevelPathI == lp_id, ]
+    
+    outlet <- filter(lp, Hydroseq == LevelPathI) %>%
+      nhdplusTools::get_node(position = "end")
+    
+    lp <- st_geometry(lp)
     
     hu_ids <- hu_lp[hu_lp$corrected_LevelPathI == lp_id, ]
     hus <- wbd[wbd$HUC12 %in% hu_ids$HUC12, ]
+    
+    outlet_hu <- hus$HUC12[st_contains(hus, outlet, sparse = FALSE)]
+    
     st_geometry(hus) <- st_cast(st_geometry(hus), "MULTILINESTRING")
     
     out <- setNames(lapply(1:nrow(hus), 
@@ -310,6 +317,11 @@ run_lp <- function(lp_id, net, hu_lp, wbd) {
                            }, 
                            lp = lp, hus = hus), 
                     hus$HUC12)
+    
+    if(length(outlet_hu) > 0) {
+      out[outlet_hu][[length(out[outlet_hu])]] <- c(out[outlet_hu][[length(out[outlet_hu])]], 
+                                                    st_geometry(outlet))
+    }
   }, 
   error = function(e) {
     warning(paste(lp_id, e))

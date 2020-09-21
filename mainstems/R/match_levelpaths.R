@@ -117,7 +117,7 @@ get_head_hu <- function(lp_hu, fline_hu) {
   out <- lp_hu %>%
     left_join(select(fline_hu, .data$Hydroseq,
                      nhd_LevelPath = .data$LevelPathI, .data$HUC12), by = "HUC12") %>%
-    filter(.data$LevelPathI == .data$nhd_LevelPath) %>%
+    filter(.data$LevelPathI == .data$nhd_LevelPath & !is.na(.data$HUC12)) %>%
     group_by(.data$LevelPathI)
   
   if(nrow(out) > 0) {
@@ -180,7 +180,7 @@ get_lp_hu <- function(fline_hu, start_comid) {
         
         next_lp <- get_next_lp(fline_hu, nlp_tracker)
 
-        next_lp <- next_lp[["LevelPathI"]]
+        next_lp <- unique(next_lp[["LevelPathI"]])
         
         i <- i + 1
         if(i > 1000) stop("runaway loop?")

@@ -40,7 +40,7 @@ compile_v1_fline <- function(out_dir, out_gpkg) {
 get_fl <- function(out_dir) {
   fl_zip <- list.files(out_dir, recursive = TRUE, full.names = TRUE, pattern = ".zip")
   
-  dev_null <- lapply(fl_zip, unzip, overwrite = FALSE, exdir = out_dir)
+  dev_null <- try(lapply(fl_zip, zip::unzip, overwrite = FALSE, exdir = out_dir))
   
   fl <- list.files(out_dir, recursive = TRUE, full.names = TRUE)
   

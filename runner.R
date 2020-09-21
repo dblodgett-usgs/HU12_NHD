@@ -15,7 +15,7 @@ plan <- drake_plan(
   national_viz_simp = 500,
   temp_dir = "temp/",
   nhdplus_dir = "data/nhdp/NHDPlusNationalData",
-  nhdplus_gdb = "NHDPlusV21_National_Seamless.gdb",
+  nhdplus_gdb = "NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.7z",
   nhdp_v1_dir = "data/nhdpv1/",
   rf1_url = "https://water.usgs.gov/GIS/dsdl/erf1_2.e00.gz",
   rf1_dir = "data/RF1/",
@@ -51,7 +51,7 @@ plan <- drake_plan(
                                                    file.path(nhdplus_oldwbd_out, "wbd_viz.gpkg")),
   nhdplus_oldwbd_write = write_output_gpkg(nhdplus_net, nhdplus_wbd, nhdplus_oldwbd_hu_joiner,
                                            nhdplus_oldwbd_linked_points, prj, viz_simp, file.path(nhdplus_oldwbd_out, "wbd_viz.gpkg")),
-  wbd_plumbing = get_hu_outlets(nhdplus_wbd, nhdplus_oldwbd_linked_points, file.path(nhdplus_oldwbd_out, "wbd_viz.gpkg")),
+  wbd_plumbing = get_hu_outlets(nhdplus_wbd, nhdplus_oldwbd_linked_points, file.path(nhdplus_oldwbd_out, "hu_outlets.gpkg")),
   #### Constants for newest WBD.
   wbd_dir = "data/wbd",
   wbd_zip_file = "WBD_National_GDB.zip",
@@ -62,7 +62,7 @@ plan <- drake_plan(
   wbd_gdb_path = download_wbd(wbd_dir),
   wbd_exclusions = get_exclusions(wbd_gdb_path[1]),
   wbd = get_wbd(wbd_gdb_path[1], wbd_fixes, prj),
-  hu02 = st_simplify(st_transform(read_sf(wbd_gdb_path[1], "WBDHU2"), prj), dTolerance = national_viz_simp),
+  hu02 = get_hu02(wbd_gdb_path[1], prj, national_viz_simp),
   ##### Match newest WBD to NHDPlusV2.
   nhdplus_newwbd_out = "out/nhdplus_newwbd/",
   nhdplus_newwbd_hu_joiner = par_match_levelpaths(nhdplus_net, wbd, proc_simp, cores, temp_dir, file.path(nhdplus_newwbd_out,
@@ -107,6 +107,8 @@ plan <- drake_plan(
                           bb = c(xmin = -103.5, ymin = 44.5, xmax = -101.5, ymax = 47)),
   plot_hw = get_hw_fig()
 )
+
+# c(xmin = -103.5, ymin = 46.25, xmax = -102.75, ymax = 47))
 
 config <- drake_config(plan = plan,
                        memory_strategy = "autoclean",

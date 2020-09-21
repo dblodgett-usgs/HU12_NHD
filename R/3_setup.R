@@ -166,3 +166,13 @@ map_nhdpv1 <- function(ms, nhdpv1, nhdpv2, xwalk) {
   return(list(mapped = find, missing_head = missing_head, missing_outlet = missing_outlet))
 }
 
+get_hu02 <- function(wbd_path, prj, national_viz_simp) {
+  wbd <- st_transform(read_sf(wbd_path, "WBDHU2"), prj)
+  
+  valid <- st_is_valid(st_geometry(wbd), NA_on_exception = TRUE)
+  valid[is.na(valid)] <- FALSE
+  
+  wbd <- wbd[valid,]
+  
+  st_simplify(wbd, dTolerance = national_viz_simp)
+}

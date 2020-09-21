@@ -192,3 +192,15 @@ test_that("high_res problem oputlet", {
 
   expect_true(matched$head_HUC12[matched$HUC12 == "010200051009"] == "010200020201")
 })
+
+test_that("alaska scale issues", {
+  start_comid <- 81020021
+  net_prep <- readRDS(list.files(pattern = "*81020021.rds",
+                                 full.names = TRUE, recursive = TRUE))
+
+  net_prep <- dplyr::mutate(net_prep, TOHUC = ifelse(HUC12 == "190801081608", 
+                                                     "190801081700", TOHUC))
+  
+  matched <- match_levelpaths(net_prep, start_comid, add_checks = TRUE)
+  
+})
