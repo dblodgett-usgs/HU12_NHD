@@ -81,3 +81,49 @@ get_hw_pairs <- function(hw_points, nhdp_cats) {
               join = sf::st_within) %>%
     st_set_geometry(NULL)
 }
+
+filter_dominant_length <- function(hu_joiner, lp_lengths, net, 
+                                   factor_corrected = 2,
+                                   factor_intersected = 10,
+                                   remove_length_m = 200) {
+  lp_lengths <- left_join(lp_lengths, select(net, COMID, LevelPathI), by = "COMID")
+  
+  lp_lengths$length <- as.numeric(lp_lengths$length)
+  
+  lp_lengths <- lp_lengths %>%
+    select(LevelPathI, HUC12, length) %>%
+    group_by(LevelPathI, HUC12) %>%
+    summarize(sum_length = sum(length))
+  
+  dominant <- lp_lengths %>%
+    group_by(HUC12) %>%
+    filter(sum_length == max(sum_length)) %>%
+    rename(dominant_LevelPathI = LevelPathI) %>%
+    select(-sum_length) %>% ungroup()
+  
+  hu_joiner2 <- hu_joiner %>%
+    rename(LevelPathI = corrected_LevelPathI) %>%
+    left_join(dominant, by = "HUC12") %>%
+    left_join(rename(ungroup(lp_lengths), lp_length = sum_length), 
+              by = c("HUC12", "LevelPathI")) %>%
+    left_join(rename(ungroup(lp_lengths), 
+                     dominant_LevelPathI = LevelPathI, 
+                     dlp_length = sum_length), 
+              by = c("HUC12", "dominant_LevelPathI"))
+  
+  # Now we have length per corrected levelpath and dominant levelpath.
+  # Can use these as metrics.
+  
+  switched <- filter(hu_joiner2, (dlp_length > factor_corrected * lp_length & LevelPathI != intersected_LevelPathI) | 
+                       (dlp_length > factor_intersected * lp_length & LevelPathI == intersected_LevelPathI)) %>%
+    filter() %>%
+    select(-LevelPathI, corrected_LevelPathI = dominant_LevelPathI, -lp_length, -dlp_length) %>%
+    mutate(dominant_override = TRUE)
+  
+  remove <- filter(hu_joiner2, dlp_length < remove_length_m & lp_length < remove_length_m)
+  
+  filter(hu_joiner, !HUC12 %in% switched$HUC12) %>%
+    mutate(dominant_override = FALSE) %>%
+    bind_rows(switched) %>%
+    filter(!HUC12 %in% remove$HUC12)
+}

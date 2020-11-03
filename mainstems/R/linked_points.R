@@ -252,7 +252,8 @@ par_linker <- function(lp_list) {
     if(any(group_size(linked) > 1)) {
       linked <- linked %>%
         dplyr::group_by(.data$hu12, .data$REACHCODE) %>%
-        dplyr::filter(.data$REACH_meas == min(.data$REACH_meas))
+        dplyr::filter(.data$REACH_meas == min(.data$REACH_meas)) %>%
+        dplyr::filter(row_number() == 1)
     }
     
     linked <- dplyr::ungroup(linked)

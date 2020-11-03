@@ -148,6 +148,7 @@ get_lp_hu <- function(fline_hu, start_comid) {
   # grouped filter but I've not been able to wrap my head around getting it
   # right in all cases.
   while(check == TRUE & count < 100000) {
+    
     # get the HUC12s that intersect the nlp we are looking for.
     lp_hu_temp <- unique(fline_hu$HUC12[which(fline_hu$LevelPathI == nlp)])
 
@@ -242,6 +243,7 @@ trace_hu_network <- function(hu, outlet_hu, fline_hu) {
 
   count <- 0
   for(lp in lps) {
+    
     lp <- filter(hu, .data$intersected_LevelPathI == lp)
     # could gather_ds levelpath instead of hu but some toHUCs go outside the levelpath intersection!
     main_stem <- tryCatch(gather_ds(hu_destructive, lp$head_HUC12[1]),
@@ -605,4 +607,29 @@ prep_net <- function(net, simp) {
   net_prep <- st_simplify(net_prep, dTolerance = simp)
   
   return(net_prep)
+}
+
+#' get_length_per_hu
+#' @param net nhdplus
+#' @param wbd wbd
+#' @param simp simplification
+#' @export
+get_length_per_hu <- function(net, wbd, simp) {
+  
+  if(file.exists("temp_intersect.rds")) {
+    intersect_net <- readRDS("temp_intersect.rds")
+    
+    warning("using cache")
+    
+  } else {
+    
+    wbd <- st_simplify(wbd, dTolerance = simp)
+    
+    intersect_net <- st_intersection(select(net, COMID), select(wbd, HUC12))
+    
+  }
+  
+  intersect_net$length <- st_length(intersect_net)
+  
+  return(intersect_net)
 }

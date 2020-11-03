@@ -510,7 +510,14 @@ get_fixes <- function(version) {
     bind_rows(list(HUC12 = "090100032203", TOHUC = "090100032207",
                    comment =  "UNKNOWN fix")) %>%
     bind_rows(list(HUC12 = "090100032207", TOHUC = "090100030000",
-                   comment =  "UNKNOWN fix"))
+                   comment =  "UNKNOWN fix")) %>%
+    bind_rows(list(HUC12 = "010200040401", TOHUC = "010200040402",
+                   comment = "headwater issue")) %>%
+    bind_rows(list(HUC12 = "010200040603", TOHUC = "010200040501",
+                   comment = "headwater issue")) %>%
+    bind_rows(list(HUC12 = "010200040501", TOHUC = "010200040503",
+                   comment = "headwater issue"))
+    
   } else {
     stop("only 'latest' or 'nhdplusv2' version supported.")
   }

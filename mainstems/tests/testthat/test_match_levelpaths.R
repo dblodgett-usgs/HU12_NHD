@@ -204,3 +204,18 @@ test_that("alaska scale issues", {
   matched <- match_levelpaths(net_prep, start_comid, add_checks = TRUE)
   
 })
+
+test_that("duplicate in r01", {
+  start_comid <- 1737140
+  
+  net_prep <- readRDS(list.files(pattern = "*1737140.rds",
+                                 full.names = TRUE, 
+                                 recursive = TRUE))
+  
+  net_prep <- dplyr::mutate(net_prep, TOHUC = ifelse(HUC12 == "010200040401", "010200040402", TOHUC))
+  net_prep <- dplyr::mutate(net_prep, TOHUC = ifelse(HUC12 == "010200040603", "010200040501", TOHUC))
+  net_prep <- dplyr::mutate(net_prep, TOHUC = ifelse(HUC12 == "010200040501", "010200040503", TOHUC))
+  
+  
+  matched <- match_levelpaths(net_prep, start_comid, add_checks = TRUE)
+})
