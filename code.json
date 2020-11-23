@@ -1,0 +1,45 @@
+[
+  {
+    "name": "mainstems",
+    "organization": "U.S. Geological Survey",
+    "description": "Data Processing Workflow for the Mainstems dataset",
+    "version": "0.0.0",
+    "status": "Preliminary",
+
+    "permissions": {
+      "usageType": "openSource",
+      "licenses": [
+        {
+          "name": "Public Domain, CC0-1.0",
+          "URL": "https://github.com/dblodgett-usgs/HU12_NHD/blob/master/LICENSE.md"
+        }
+      ]
+    },
+
+    "homepageURL": "https://github.com/dblodgett-usgs/HU12_NHD",
+    "downloadURL": "https://github.com/dblodgett-usgs/HU12_NHD/archive/master.zip",
+    "disclaimerURL": "https://github.com/dblodgett-usgs/HU12_NHD/blob/master/DISCLAIMER.md",
+    "repositoryURL": "https://github.com/dblodgett-usgs/HU12_NHD.git",
+    "vcs": "git",
+
+    "laborHours": 1000,
+
+    "tags": [
+      "hydrology",
+      "mainstem"
+    ],
+
+    "languages": [
+      "R"
+    ],
+
+    "contact": {
+      "name": "David Blodgett",
+      "email": "dblodgett@usgs.gov"
+    },
+
+    "date": {
+      "metadataLastUpdated": "2020-11-23"
+    }
+  }
+]
