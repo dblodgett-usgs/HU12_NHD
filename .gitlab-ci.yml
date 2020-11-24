@@ -1,0 +1,11 @@
+stages:
+  - check
+
+check:
+  stage: check
+  image: code.chs.usgs.gov:5001/wma/hydrogeoenv:custom-latest
+  script:
+    - R CMD build mainstems --no-build-vignettes --no-manual
+    - R CMD check *tar.gz --no-build-vignettes --no-manual
+  tags:
+    - chs-shared
