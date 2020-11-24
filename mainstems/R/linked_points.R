@@ -298,8 +298,11 @@ run_lp <- function(lp_id, net, hu_lp, wbd) {
   tryCatch({
     lp <- net[net$LevelPathI == lp_id, ]
     
-    outlet <- filter(lp, Hydroseq == LevelPathI) %>%
-      nhdplusTools::get_node(position = "end")
+    outlet <- filter(lp, Hydroseq == LevelPathI)
+    
+    if(nrow(outlet) < 1) outlet <- filter(lp, Hydroseq == min(Hydroseq))
+    
+    outlet <- nhdplusTools::get_node(outlet, position = "end")
     
     lp <- st_geometry(lp)
     
@@ -404,7 +407,7 @@ get_lp_hu_points <- function(points, prj) {
                         function(lp, points) {
                           hu_points <- try(bind_rows(lapply(points[lp], hu_points_fun)))
                           
-                          if(!is(hu_points, "data.frame")) browser()
+                          if(!methods::is(hu_points, "data.frame")) browser()
                           
                           hu_points[["lp"]] <- lp
                           

@@ -16,3 +16,5 @@
     min_time = 0))
   invisible(NULL)
 }
+
+COMID <- HUC12 <- Hydroseq <- LevelPathI <- NULL
