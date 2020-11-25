@@ -530,7 +530,7 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/",
     
     all <- sapply(out_files, readRDS, USE.NAMES = TRUE)
     
-    names(all) <- gsub(temp_dir, "", names(all))
+    names(all) <- basename(names(all))
     names(all) <- gsub(".rds", "", names(all))
     
     all <- do.call(rbind, all)
