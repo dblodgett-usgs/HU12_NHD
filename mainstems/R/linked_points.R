@@ -350,31 +350,43 @@ get_points_out <- function(hu_lp, net, wbd, exclude) {
     filter(.data$Hydroseq == .data$LevelPathI) %>% # only level path outlet flowlines
     select(.data$LevelPathI)
   
+  # Outlets are lines from above, need to get them as points.
   outlets <- st_sf(st_drop_geometry(outlets), 
                    geom = st_geometry(get_node(outlets, position = "end")))
   
+  # Join outlets to WBD to find what HUC12 they are in.
   outlets <- st_join(outlets, select(wbd, .data$HUC12))
   
+  # Drop geometry and rename for use later. This is just pairs of HUC12 and levelpath.
   outlets <- st_drop_geometry(rename(outlets, point_outlet = HUC12))
   
+  # Join the point_outlet level path from above into hu_lp
   hu_lp <- left_join(hu_lp, outlets, by = c("corrected_LevelPathI" = "LevelPathI"))
   
+  # Categorize as terminates in headwater HU or exits the huead HU.
   terminates_in_hu <- filter(hu_lp, .data$head_HUC12 == .data$point_outlet)
   exits_head_hu <- filter(hu_lp, .data$head_HUC12 != .data$point_outlet)
-
+  # Third category for HUs that have some exting and some terminating in.
+  # In this case, the ones that terminate in the HU can have a levelPath
+  # that indicates it is larger than the one that does flow out.
+  # Need to deal with that to make sure we choose the right outlet.
   term_and_exits <- group_by(hu_lp, .data$HUC12) %>%
     filter(dplyr::n() > 1 &&
              any(.data$HUC12 %in% terminates_in_hu$HUC12) && 
              any(.data$HUC12 %in% exits_head_hu$HUC12))
   
+  # This is a case where we don't have a mix of outflowing and terminating
   all_in_or_out <- group_by(hu_lp, .data$HUC12) %>%
     filter(!.data$HUC12 %in% term_and_exits$HUC12 &
              .data$corrected_LevelPathI == min(.data$corrected_LevelPathI)) %>%
     ungroup()
            
   if(nrow(term_and_exits) > 0) {
+    # for the ones that have both outflowing paths and terminal paths,
     term_and_exits <- term_and_exits %>%
+      # only consider the ones with outlet points not in the headwater huc12. 
       filter(.data$head_HUC12 != .data$point_outlet) %>%
+      # And choose the smallest levelpathId from that set
       filter(.data$corrected_LevelPathI == min(.data$corrected_LevelPathI)) %>%
       ungroup()
   }
