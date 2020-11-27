@@ -22,7 +22,7 @@ test:
   image: code.chs.usgs.gov:5001/wma/hydrogeoenv:rocker-geospatial
   script:
     - r -e 'devtools::check("mainstems", check_dir = ".")'
-    - r -e 'covr::report(covr::package_coverage("mainstems", quiet = TRUE), file = mainstems-covr.html)'"
+    - r -e 'covr::report(covr::package_coverage("mainstems", quiet = TRUE), file = "mainstems-covr.html")'
   artifacts:
     paths:
       - "*.Rcheck"
