@@ -205,8 +205,11 @@ test_that("alaska scale issues", {
   net_prep <- dplyr::mutate(net_prep, TOHUC = ifelse(HUC12 == "190801081608", 
                                                      "190801081700", TOHUC))
   
-  matched <- match_levelpaths(net_prep, start_comid, add_checks = TRUE)
+  warnings <- capture_warnings(matched <- match_levelpaths(net_prep, start_comid, add_checks = TRUE))
   
+  expect_equal(length(warnings), 9)
+  
+  expect_equal(nrow(matched), 4246)
 })
 
 test_that("duplicate in r01", {
