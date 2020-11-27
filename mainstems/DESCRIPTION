@@ -10,7 +10,8 @@ BugReports: https://github.com/dblodgett-usgs/HU12_NHD/issues
 Depends:
     R (>= 3.5.0)
 Imports: dplyr, sf, nhdplusTools, snow, parallel, tidyr, pbapply, readr, methods
-Suggests: testthat, knitr, rmarkdown
+Suggests: testthat, knitr, rmarkdown, hyRefactor
+Remotes: dblodgett-usgs/hyRefactor
 License: CC0
 Encoding: UTF-8
 LazyData: true
