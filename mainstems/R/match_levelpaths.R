@@ -477,7 +477,7 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/",
                                  out_file = "temp.csv", net_int = NULL, 
                                  purge_temp = TRUE) {
   
-  if(names(net) == "NHDFlowline") net <- net$NHDFlowline
+  if(length(names(net)) == 1 && names(net) == "NHDFlowline") net <- net$NHDFlowline
   
   if(file.exists(out_file)) {
     all <- readr::read_csv(out_file)
@@ -571,7 +571,7 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/",
 
 get_process_data <- function(net, wbd, simp) {
   
-  if(names(net) == "NHDFlowline") net <- net$NHDFlowline
+  if(length(names(net)) == 1 && names(net) == "NHDFlowline") net <- net$NHDFlowline
   
   net_prep <- prep_net(net, simp)
   

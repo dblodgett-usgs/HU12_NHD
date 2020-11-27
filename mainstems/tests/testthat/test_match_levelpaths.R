@@ -106,9 +106,9 @@ test_that("match levelpaths funky heatwater 4292649", {
     st_zm()
   hu <- read_sf("data/test_4292649.gpkg", "HUC12_new")
     
-  suppressWarnings(matched <- par_match_levelpaths(net, hu, 0, 1, 
+  matched <- par_match_levelpaths(net, hu, 0, 1, 
                                   tempdir(check = TRUE), 
-                                  "temp.csv"))
+                                  "temp.csv")
   
   unlink("temp.csv")
   
