@@ -4,7 +4,7 @@ variables:
   APT_PKGS: "libudunits2-dev libgdal-dev libgeos-dev libproj-dev libcurl4-openssl-dev libssh2-1-dev libssl-dev libxml2-dev zlib1g-dev git"
 
 before_script:
-  - wget --no-check-certificate -O /usr/local/share/ca-certificates/DOIRootCA2.crt https://raw.githubusercontent.com/dblodgett-usgs/hydrogeoenv/master/linux/DOIRootCA2.cer
+  - wget -O /usr/local/share/ca-certificates/DOIRootCA2.crt http://sslhelp.doi.net/docs/DOIRootCA2.cer
   - chmod 644 /usr/local/share/ca-certificates/DOIRootCA2.crt && update-ca-certificates
   - apt-get update
   - apt-get install -y --no-install-recommends ${APT_PKGS}
