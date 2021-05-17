@@ -586,12 +586,17 @@ get_process_data <- function(net, wbd, simp) {
 #' @import nhdplusTools sf dplyr
 prep_net <- function(net, simp) {
   
+  if(!"StreamOrde" %in% names(net)) {
+    net$StreamOrde <- 1
+    net$StreamCalc <- 1
+  }
+  
   net_prep <- select(net, .data$COMID, .data$DnLevelPat, .data$AreaSqKM) %>%
     left_join(prepare_nhdplus(net, 
                               min_network_size = 0, # sqkm
                               min_path_length = 0, # sqkm
                               min_path_size = 0, # sqkm
-                              purge_non_dendritic = TRUE,
+                              purge_non_dendritic = FALSE,
                               warn =  TRUE, error = FALSE), by = "COMID") %>%
     st_sf() %>%
     group_by(.data$LevelPathI) %>%

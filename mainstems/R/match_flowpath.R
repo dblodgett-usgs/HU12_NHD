@@ -7,6 +7,12 @@
 #' @export
 get_hw_points <- function(fline) {
   if("COMID" %in% names(fline)) {
+    
+    if(!"StreamOrde" %in% names(fline)) {
+      fline$StreamOrde <- 1
+      fline$StreamCalc <- 1
+    }
+    
     fline <- select(fline, .data$COMID) %>%
       right_join(prepare_nhdplus(fline, 0, 0, 0, warn = FALSE), 
                 by = "COMID") %>%

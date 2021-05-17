@@ -25,7 +25,7 @@ prep_nhdplushr <- function(hr_fline) {
                               min_network_size = 0, 
                               min_path_length = 0, 
                               min_path_size = 0, 
-                              purge_non_dendritic = TRUE) %>%
+                              purge_non_dendritic = FALSE) %>%
     select(ID = COMID, toID = toCOMID, length = LENGTHKM) %>%
     left_join(select(hr_fline,
                      ID = COMID, area = AreaSqKM, nameID = GNIS_ID),
@@ -53,13 +53,24 @@ prep_nhdplushr <- function(hr_fline) {
 }
 
 
-get_net <- function(net, prj) {
+get_net <- function(net, prj, nhdplus_update = NULL) {
   
   if("NHDPlusID" %in% names(net)) {
     net <- rename(net, COMID = NHDPlusID, LENGTHKM = LengthKM, FTYPE = FType, 
                   TotDASqKM = TotDASqKm, Hydroseq = HydroSeq, Pathlength = PathLength,
                   AreaSqKM = AreaSqKm, DnHydroseq = DnHydroSeq)
     net$TerminalFl[which(!net$ToNode %in% net$FromNode)] <- 1
+  } else {
+    new_atts <- data.table::fread(nhdplus_update, 
+                                  integer64 = "character")
+    
+    net <- select(net, COMID) %>%
+      right_join(new_atts, by = c("COMID" = "comid")) %>%
+      align_nhdplus_names()
+    
+    # Required in the dataset but not used.
+    net$StreamOrde <- 1
+    net$StreamCalc <- 1
   }
   return(net %>%
            st_zm() %>%

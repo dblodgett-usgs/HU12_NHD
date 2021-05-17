@@ -8,13 +8,14 @@ source("R/6_visualize.R")
 source("R/10_build_mainstems_table.R")
 plan <- drake_plan(
   ##### Constants
-  cores = 3,
+  cores = 12,
   prj = 5070,
   viz_simp = 30,
   proc_simp = 10,
   national_viz_simp = 500,
   temp_dir = "temp/",
   nhdplus_dir = "data/nhdp/NHDPlusNationalData",
+  nhdplus_update = file_in("data/nhdp/enhd_nhdplusatts.csv"),
   nhdplus_gdb = "NHDPlusV21_NationalData_Seamless_Geodatabase_Lower48_07.7z",
   nhdp_v1_dir = "data/nhdpv1/",
   rf1_url = "https://water.usgs.gov/GIS/dsdl/erf1_2.e00.gz",
@@ -34,7 +35,7 @@ plan <- drake_plan(
   nhdpv1_mapped = map_nhdpv1(mainstems_table, nhdpv1_atts, nhdplus_net_atts, nhdpv1_2_xwalk),
   ##### Load Data
   nhdplus_wbd = get_wbd(nhdplus_gdb_path, nhdplus_wbd_fixes, prj),
-  nhdplus_net = get_net(read_sf(nhdplus_gdb_path, "NHDFlowline_Network"), prj),
+  nhdplus_net = get_net(read_sf(nhdplus_gdb_path, "NHDFlowline_Network"), prj, nhdplus_update),
   nhdplus_net_atts = st_set_geometry(nhdplus_net, NULL),
   ##### Match NHDPlusV2 with stable (old) WBD
   nhdplus_oldwbd_out = "out/nhdplus_oldwbd/",
@@ -72,9 +73,11 @@ plan <- drake_plan(
   hu02 = get_hu02(wbd_gdb_path[1], prj, national_viz_simp),
   ##### Match newest WBD to NHDPlusV2.
   nhdplus_newwbd_out = "out/nhdplus_newwbd/",
+  nhdplus_newwbd_net_int = mainstems:::get_process_data(nhdplus_net, wbd, proc_simp),
   nhdplus_newwbd_hu_joiner = par_match_levelpaths(nhdplus_net, wbd, proc_simp, cores, 
                                                   temp_dir, file.path(nhdplus_newwbd_out,
-                                                                      "map_joiner.csv")),
+                                                                      "map_joiner.csv"), 
+                                                  nhdplus_newwbd_net_int),
   nhdplus_newwbd_hu_joiner_lengths = get_length_per_hu(nhdplus_net, wbd, proc_simp),
   nhdplus_newwbd_hu_joiner_override = filter_dominant_length(nhdplus_newwbd_hu_joiner, 
                                                              st_drop_geometry(nhdplus_newwbd_hu_joiner_lengths), 
@@ -91,15 +94,15 @@ plan <- drake_plan(
                                            nhdplus_newwbd_linked_points, prj, viz_simp, file.path(nhdplus_newwbd_out, "wbd_viz.gpkg")),
   nhdplus_newwbd_plumbing = get_hu_outlets(wbd, nhdplus_newwbd_linked_points, file.path(nhdplus_newwbd_out, "wbd_viz.gpkg")),
   # Create plots for newest WBD matches.
-  plot_data = geom_plot_data(wbd, nhdplus_net, nhdplus_newwbd_hu_joiner, "^03.*"),
-  out_png = create_png(plot_data, nhdplus_newwbd_hu_joiner_override, "png/"),
+  # plot_data = geom_plot_data(wbd, nhdplus_net, nhdplus_newwbd_hu_joiner, "^03.*"),
+  # out_png = create_png(plot_data, nhdplus_newwbd_hu_joiner_override, "png/"),
   # out_wbd_plot_data = get_wbd_plot_data(nhdplus_net, wbd_gdb_path, nhdplus_newwbd_plumbing, viz_simp, prj, cores, file.path(nhdplus_newwbd_out, "wbd_plots.gpkg")),
   # out_wbd_plots = plot_wbd(out_wbd_plot_data),
   # Match RF1 to NHDPlusV2
   rf1_out = "out/rf1_out",
   rf1_hw = get_hw_points(rf1),
   rf1_nhdplus_hw_pairs = get_hw_pairs(rf1_hw, nhdplus_cats),
-  rf1_nhdplus = match_flowpaths(left_join(select(prepare_nhdplus(nhdplus_net_atts, 100, 0, 0, FALSE), COMID),
+  rf1_nhdplus = match_flowpaths(left_join(select(prepare_nhdplus(nhdplus_net_atts, 100, 0, 0, FALSE, skip_toCOMID = TRUE), COMID),
                                           nhdplus_net_atts, by = "COMID"),
                                 st_set_geometry(rf1, NULL),
                                 rf1_nhdplus_hw_pairs, 4),
