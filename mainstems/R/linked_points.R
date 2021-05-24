@@ -190,8 +190,7 @@ get_linked_points_scalable <- function(in_list, na_outlet_coords, cores = NA, ch
     if(is.na(cores)) {
       linked <- lapply(in_list, par_linker)
     } else {
-      cl <- parallel::makeCluster(rep("localhost", cores),
-                                  type = "SOCK", outfile = "par.log")
+      cl <- parallel::makeCluster(cores, outfile = "par.log")
       
       linked <- snow::parLapply(cl, in_list, par_linker)
       

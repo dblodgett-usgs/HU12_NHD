@@ -119,7 +119,7 @@ match_flowpaths <- function(source_flowline, target_flowline, hw_pair, cores = N
     
     cl <- NULL
     if(!is.na(cores)) {
-      cl <- parallel::makeCluster(rep("localhost", cores), type = "SOCK")
+      cl <- parallel::makeCluster(cores)
     }
     
     lpt["member_ID"] <- list(pblapply(hw_pair$ID,
@@ -132,7 +132,7 @@ match_flowpaths <- function(source_flowline, target_flowline, hw_pair, cores = N
     
     if(!is.na(cores)) {
       parallel::stopCluster(cl)
-      cl <- parallel::makeCluster(rep("localhost", cores), type = "SOCK")
+      cl <- parallel::makeCluster(cores)
     }
     
     lps["member_COMID"] <- list(pblapply(hw_pair$FEATUREID,
