@@ -6,18 +6,18 @@ build_mainstem_table <- function(nhdplus_net,
                                  nhdp_wbd,
                                  wbd,
                                  nhd1) {
-  
-  GNIS <- select(nhdplus_net, LevelPathI, Hydroseq, GNIS_ID, GNIS_NAME) %>%
-    filter(GNIS_ID != " ") %>%
-    group_by(LevelPathI) %>%
-    filter(Hydroseq == min(Hydroseq)) %>%
-    ungroup() %>% 
-    select(LevelPathI, outlet_GNIS_ID = GNIS_ID, outlet_GNIS_NAME = GNIS_NAME)
+# Can add this back from it's not in the new nhgdplus attributes.  
+  # GNIS <- select(nhdplus_net, LevelPathI, Hydroseq, GNIS_ID, GNIS_NAME) %>%
+  #   filter(GNIS_ID != " ") %>%
+  #   group_by(LevelPathI) %>%
+  #   filter(Hydroseq == min(Hydroseq)) %>%
+  #   ungroup() %>% 
+  #   select(LevelPathI, outlet_GNIS_ID = GNIS_ID, outlet_GNIS_NAME = GNIS_NAME)
   
   ms <- data.frame("LevelPathI" = unique(nhdplus_net$LevelPathI))
   
   ms <- ms %>%
-    left_join(GNIS, by = "LevelPathI") %>%
+    # left_join(GNIS, by = "LevelPathI") %>%
     left_join(select(get_lp_outlets(nhdplus_net),
                      LevelPathI, 
                      outlet_nhdpv2_COMID = COMID), by = "LevelPathI") %>%

@@ -351,51 +351,6 @@ correct_hu <- function(hu, fline_hu, funky_headwaters, add_checks) {
   return(hu)
 }
 
-get_process_data <- function(net, wbd, simp) {
-  
-  if(length(names(net)) == 1 && names(net) == "NHDFlowline") net <- net$NHDFlowline
-  
-  net_prep <- prep_net(net, simp)
-  
-  wbd <- select(st_simplify(wbd, dTolerance = simp), .data$HUC12, .data$TOHUC)
-  
-  net_prep <- st_join(net_prep, wbd) %>%
-    st_set_geometry(NULL)
-  
-  return(net_prep)
-}
-
-#' @import nhdplusTools sf dplyr
-prep_net <- function(net, simp) {
-  
-  if(!"StreamOrde" %in% names(net)) {
-    net$StreamOrde <- 1
-    net$StreamCalc <- 1
-  }
-  
-  net_prep <- select(net, .data$COMID, .data$DnLevelPat, .data$AreaSqKM) %>%
-    left_join(prepare_nhdplus(net, 
-                              min_network_size = 0, # sqkm
-                              min_path_length = 0, # sqkm
-                              min_path_size = 0, # sqkm
-                              purge_non_dendritic = FALSE,
-                              warn =  TRUE, error = FALSE), by = "COMID") %>%
-    st_sf() %>%
-    group_by(.data$LevelPathI) %>%
-    arrange(.data$Hydroseq) %>%
-    mutate(DnLevelPat = .data$DnLevelPat[1]) %>%
-    ungroup()
-  
-  net_prep["denTotalAreaSqKM"] <-
-    nhdplusTools::calculate_total_drainage_area(select(st_set_geometry(net_prep, NULL),
-                                         ID = .data$COMID, toID = .data$toCOMID,
-                                         area = .data$AreaSqKM))
-  
-  net_prep <- st_simplify(net_prep, dTolerance = simp)
-  
-  return(net_prep)
-}
-
 #' get_length_per_hu
 #' @param net nhdplus
 #' @param wbd wbd

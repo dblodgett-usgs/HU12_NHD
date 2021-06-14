@@ -103,3 +103,19 @@ get_merit_basins <- function(merit_dir) {
   }
 }
 
+download_naturalearth <- function(naturalearth_dir) {
+  dir.create(naturalearth_dir, recursive = TRUE, showWarnings = FALSE)
+  url <- "https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/10m/physical/ne_10m_rivers_lake_centerlines_scale_rank.zip"
+  
+  f <- file.path(naturalearth_dir, "ne_10m_rivers_lake_centerlines_scale_rank.zip")
+  
+  if(!file.exists(f)) {
+    
+    download.file(url, f)
+    
+    zip::unzip(f, exdir = naturalearth_dir)  
+  }
+  
+  return(list.files(naturalearth_dir, pattern = "*.shp", full.names = TRUE))
+  
+}

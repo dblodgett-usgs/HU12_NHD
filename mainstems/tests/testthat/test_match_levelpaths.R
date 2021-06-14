@@ -52,10 +52,26 @@ test_that("match levelpaths and get_linked_points", {
   suppressWarnings(hu_lp_2 <- par_match_levelpaths(new_hope_flowline, wbd, 10, 1, 
                                                    temp_dir = temp, 
                                                    out_file = file.path(temp, "temp.csv")))
+
+  expect_true(all(names(hu_lp) %in% names(hu_lp_2)))
+  
+  expect_true(nrow(hu_lp) == nrow(hu_lp_2))
+  
+  split_terminals <- data.frame(COMID = c(8894324, 8897784),
+                                stop = c(0, 8894324))
+  
+  unlink(temp, recursive = TRUE)
+  dir.create(temp, recursive = TRUE)
+  
+  suppressWarnings(hu_lp_2 <- par_match_levelpaths(new_hope_flowline, wbd, 10, 1, 
+                                                   temp_dir = temp, 
+                                                   out_file = file.path(temp, "temp.csv"),
+                                                   split_terminals = split_terminals))
   
   expect_true(all(names(hu_lp) %in% names(hu_lp_2)))
   
   expect_true(nrow(hu_lp) == nrow(hu_lp_2))
+  
 })
 
 test_that("match levelpaths runs 2279159", {

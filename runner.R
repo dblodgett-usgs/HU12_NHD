@@ -40,11 +40,13 @@ plan <- drake_plan(
   ##### Match NHDPlusV2 with stable (old) WBD
   nhdplus_oldwbd_out = "out/nhdplus_oldwbd/",
   nhdplus_oldwbd_net_int = mainstems:::get_process_data(nhdplus_net, nhdplus_wbd, proc_simp),
+  nhdplus_oldwbd_net_int_fix = nhdplus_oldwbd_net_int[!is.na(nhdplus_oldwbd_net_int$HUC12), ],
   nhdplus_oldwbd_hu_joiner = par_match_levelpaths(nhdplus_net, nhdplus_wbd, proc_simp, 
                                                   cores, temp_dir, 
                                                   paste0(nhdplus_oldwbd_out, 
                                                          "map_joiner.csv"),
-                                                  nhdplus_oldwbd_net_int),
+                                                  nhdplus_oldwbd_net_int_fix, FALSE,
+                                                  split_terminals),
   nhdplus_oldwbd_hu_joiner_lengths = get_length_per_hu(nhdplus_net, nhdplus_wbd, proc_simp),
   nhdplus_oldwbd_hu_joiner_override = filter_dominant_length(nhdplus_oldwbd_hu_joiner, 
                                                              st_drop_geometry(nhdplus_oldwbd_hu_joiner_lengths), 
@@ -102,8 +104,7 @@ plan <- drake_plan(
   rf1_out = "out/rf1_out",
   rf1_hw = get_hw_points(rf1),
   rf1_nhdplus_hw_pairs = get_hw_pairs(rf1_hw, nhdplus_cats),
-  rf1_nhdplus = match_flowpaths(left_join(select(prepare_nhdplus(nhdplus_net_atts, 100, 0, 0, FALSE, skip_toCOMID = TRUE), COMID),
-                                          nhdplus_net_atts, by = "COMID"),
+  rf1_nhdplus = match_flowpaths(nhdplus_net_atts,
                                 st_set_geometry(rf1, NULL),
                                 rf1_nhdplus_hw_pairs, 4),
   rf1_output = write_rf1_output(rf1, rf1_nhdplus, rf1_out),
@@ -123,7 +124,8 @@ plan <- drake_plan(
   plot_lps_data_all = get_lp_plot_data_rf1(plot_lps_data_wbd, rf1, rf1_nhdplus, national_viz_simp),
   plot_lps = get_lp_plots(plot_lps_data_all, 3, hu02, hu02_filter = "10",
                           bb = c(xmin = -103.5, ymin = 44.5, xmax = -101.5, ymax = 47)),
-  plot_hw = get_hw_fig()
+  plot_hw = get_hw_fig(),
+  publish_sb()
 )
 
-make(plan = plan, memory_strategy = "autoclean", garbage_collection = TRUE)
+# make(plan = plan, memory_strategy = "autoclean", garbage_collection = TRUE)

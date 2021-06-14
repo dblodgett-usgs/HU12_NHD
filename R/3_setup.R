@@ -1,3 +1,8 @@
+# For splitting nhdplusV2 in the Mississippi
+split_terminals <- data.frame(outlet = c("ohio", "uppermiss", "missouri", "middlemiss", "lowermiss"), 
+                              COMID = c(1844789, 880678, 6018266, 5093446, 22811611),
+                              stop = c(0, 0, 0, 880678, 5093446))
+
 rename_hr_fl = function(hr_vpus) {
   new_names <- gsub("NHDPLUS_H_", "", gsub("_HU4_GDB", "", hr_vpus))
   
@@ -85,7 +90,7 @@ get_wbd <- function(wbd_gdb, fixes, prj) {
   if("HUC_12" %in% names(wbd)) {
     wbd <- select(wbd, HUC12 = HUC_12, TOHUC = HU_12_DS)
   } else {
-    wbd <- select(wbd, HUC12, TOHUC)
+    wbd <- select(wbd, HUC12 = huc12, TOHUC = tohuc)
   }
   
   wbd <- filter(wbd, !grepl("^20.*|^19.*|^21.*|^22.*", wbd$HUC12))
@@ -187,3 +192,65 @@ get_hu02 <- function(wbd_path, prj, national_viz_simp) {
   
   st_simplify(wbd, dTolerance = national_viz_simp)
 }
+
+get_merit <- function(mdir) {
+  merit_files <- list.files(mdir, pattern = "riv_.*shp", full.names = TRUE)
+  
+  merit_cats <- list.files(mdir, pattern = "cat_.*shp", full.names = TRUE)
+  
+  riv <- lapply(merit_files, sf::read_sf)
+  
+  cat <- lapply(merit_cats, sf::read_sf)
+  
+  cat <- lapply(cat, sf::st_drop_geometry)
+  
+  cat <- bind_rows(cat)
+  
+  riv <- do.call(rbind, riv)
+  
+  riv <- left_join(riv, cat, by = "COMID")
+  
+  mutate(riv, nameID = "constant") %>%
+    select(comid = COMID, 
+           tocomid = NextDownID, 
+           nameID, 
+           lengthkm, 
+           areasqkm = unitarea)
+}
+
+get_merit_cats <- function(mdir) {
+  merit_cats <- list.files(mdir, pattern = "cat_.*shp", full.names = TRUE)
+  do.call(rbind, lapply(merit_cats, sf::read_sf))
+}
+
+get_merit_atts <- function(riv, cores, merit_cache = "") {
+  
+  if(file.exists(merit_cache)) {
+    message("returning cached merit atts")
+    
+    return(st_drop_geometry(read_sf(merit_cache, "merit_plus")))
+  }
+  
+  riv_atts <- st_drop_geometry(riv)
+  
+  add_plus_network_attributes(riv_atts, 
+                              cores = cores, 
+                              status = TRUE)
+  
+}
+
+write_merit <- function(riv, riv_atts, out_gpkg) {
+  
+  if(file.exists(out_gpkg)) {
+    message("returning cached merit plus data")
+    
+    return(sf::read_sf(out_gpkg, "merit_plus"))
+  }
+  
+  riv <- left_join(select(riv, comid), riv_atts, by = "comid")
+  
+  write_sf(riv, out_gpkg, "merit_plus")
+  
+  riv
+}
+

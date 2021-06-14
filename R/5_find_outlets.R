@@ -7,15 +7,18 @@ get_exclusions <- function(wbd_gdb) {
     wbd <- read_sf(wbd_gdb, "WBDHU12")
   }
   
+  names(wbd)[names(wbd) != attr(wbd, "sf_column")] <- toupper(names(wbd)[names(wbd) != attr(wbd, "sf_column")])
+
   wbd_type <- st_set_geometry(wbd, NULL)
-  
+    
   if("HUTYPE" %in% names(wbd_type)) {
     wbd_type <- distinct(select(wbd_type, HUC12, HUTYPE))
   } else {
     wbd_type <- distinct(select(wbd_type, HUC12, HUTYPE = HU_12_TYPE))
   }
   
-  wbd <- group_by(wbd, HUC12) %>%
+  wbd <- sf::st_drop_geometry(wbd) %>%
+    group_by(HUC12) %>%
     summarise(TOHUC = TOHUC[1])
   
   # Exclusions where river-flow does not apply:

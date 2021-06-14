@@ -1,11 +1,21 @@
-par_match_levelpaths_fun <- function(start_comid, net_atts, net_prep, wbd_atts, 
+par_match_levelpaths_fun <- function(x, net_atts, net_prep, wbd_atts, 
                                      temp_dir, cluster = NULL) {
+  
+  start_comid <- x[[1]]
+  
+  stop_comid <- x[[2]]
   
   out_file <- file.path(temp_dir, paste0(start_comid, ".rds"))
   
   if(!file.exists(out_file)) {
     
     all_comid <- nhdplusTools::get_UT(net_atts, start_comid)
+    
+    if(stop_comid != 0) {
+      up_comid <- nhdplusTools::get_UT(net_atts, stop_comid)
+      
+      all_comid <- all_comid[!all_comid %in% up_comid]
+    }
     
     sub_net <- dplyr::filter(net_prep, .data$COMID %in% all_comid)
     
@@ -18,7 +28,7 @@ par_match_levelpaths_fun <- function(start_comid, net_atts, net_prep, wbd_atts,
                                                 .data$HUC12, .data$TOHUC))
       
       out <- list(mainstems::match_levelpaths(sub_net, start_comid, 
-                                              add_checks = TRUE, cl = cluster))
+                                              add_checks = TRUE))
       
     }
     
@@ -42,9 +52,11 @@ par_match_levelpaths_fun <- function(start_comid, net_atts, net_prep, wbd_atts,
 #' @export
 par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/", 
                                  out_file = "temp.csv", net_int = NULL, 
-                                 purge_temp = TRUE) {
+                                 purge_temp = TRUE, split_terminals = NULL) {
   
   if(length(names(net)) == 1 && names(net) == "NHDFlowline") net <- net$NHDFlowline
+  
+  if("tocomid" %in% names(net)) net <- rename(net, toCOMID = tocomid)
   
   if(file.exists(out_file)) {
     all <- readr::read_csv(out_file)
@@ -67,14 +79,20 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/",
       filter(.data$COMID %in% net_int$COMID) %>%
       group_by(.data$TerminalPa) %>%
       filter(.data$Hydroseq == min(.data$Hydroseq, na.rm= TRUE)) %>%
-      ungroup()
+      ungroup() %>%
+      mutate(stop = 0)
     
-    big_terminals <- terminals %>%
-      left_join(select(net, .data$COMID, .data$TotDASqKM), by = "COMID") %>%
-      filter(.data$TotDASqKM > 100000) %>%
-      select(-.data$TotDASqKM)
-    
-    terminals <- filter(terminals, !.data$COMID %in% big_terminals$COMID)
+    if(!is.null(split_terminals)) {
+
+      split_terminals <- left_join(split_terminals,
+                                   select(net, .data$COMID, .data$Hydroseq),
+                                   by = "COMID")
+      
+      terminals <- terminals %>%
+        filter(!COMID %in% split_terminals$COMID) %>%
+        bind_rows(split_terminals)
+      
+    }
     
     if(cores > 1) {
       cl <- parallel::makeCluster(cores, outfile = "hu_joiner.log")
@@ -83,27 +101,21 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/",
     }
     
     to_run <- terminals$COMID
-    to_run_big <- big_terminals$COMID
-    
+
     dir.create(temp_dir, showWarnings = FALSE)
     already_run <- list.files(temp_dir, pattern = "*.rds")
     already_run <- as.numeric(gsub(".rds", "", already_run))
     
-    to_run <- to_run[!to_run %in% already_run]
-    to_run_big <- to_run_big[!to_run_big %in% already_run]
+    to_run <- terminals[!to_run %in% already_run,]
     
-    small_outlets <- pblapply(to_run, par_match_levelpaths_fun,
-                              net_atts = net,
-                              net_prep = net_int,
-                              wbd_atts = wbd,
-                              temp_dir = temp_dir, cl = cl)
+    to_run <- Map(list, to_run$COMID, to_run$stop)
     
-    big_outlets <- pblapply(to_run_big, par_match_levelpaths_fun,
-                            net_atts = net,
-                            net_prep = net_int,
-                            wbd_atts = wbd,
-                            temp_dir = temp_dir,
-                            cluster = cl)
+    outlets <- pblapply(to_run, 
+                        par_match_levelpaths_fun,
+                        net_atts = net,
+                        net_prep = net_int,
+                        wbd_atts = wbd,
+                        temp_dir = temp_dir, cl = cl)
     
     if(!is.null(cl)) {
       parallel::stopCluster(cl)
@@ -145,6 +157,39 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/",
     
     all <- rbind(all, add_match)
     
+    if(!is.null(split_terminals)) {
+    
+      wbd_sorted <- nhdplusTools:::get_sorted(wbd)
+      
+      wbd_sorted <- data.frame(order = seq(1, length(wbd_sorted)),
+                               HUC12 = wbd_sorted)
+      
+      g <- all %>%
+        group_by(HUC12) %>%
+        filter(n() > 1)
+      
+      h <- g %>% 
+        select(HUC12, head_HUC12) %>%
+        left_join(wbd_sorted, by = c("head_HUC12" = "HUC12")) %>%
+        filter(order == min(order)) %>%
+        select(-order)
+      
+      o <- g %>%
+        select(HUC12, outlet_HUC12) %>%
+        left_join(wbd_sorted, by = c("outlet_HUC12" = "HUC12")) %>%
+        filter(order == max(order)) %>%
+        select(-order)
+      
+      g <- select(g, -head_HUC12, -outlet_HUC12) %>%
+        filter(row_number() == 1) %>%
+        left_join(h, by = "HUC12") %>%
+        left_join(o, by = "HUC12")
+      
+      all <- filter(all, !HUC12 %in% g$HUC12) %>%
+        bind_rows(g)
+          
+    }
+    
     readr::write_csv(all, out_file)
     
   }
@@ -169,12 +214,21 @@ get_process_data <- function(net, wbd, simp) {
 #' @import nhdplusTools sf dplyr
 prep_net <- function(net, simp) {
   
+  net <- nhdplusTools::align_nhdplus_names(net)
+  
   if(!"StreamOrde" %in% names(net)) {
     net$StreamOrde <- 1
     net$StreamCalc <- 1
   }
   
-  net_prep <- rename(net, toCOMID = tocomid) %>%
+  if(!"toCOMID" %in% names(net)) {
+    net <- select(net, .data$COMID, .data$DnLevelPat, .data$AreaSqKM) %>%
+      left_join(prepare_nhdplus(net, 0, 0, 0, purge_non_dendritic = FALSE,
+                                warn = FALSE, error = FALSE), 
+                by = "COMID")
+  }
+  
+  net_prep <- net %>%
     st_sf() %>%
     group_by(.data$LevelPathI) %>%
     arrange(.data$Hydroseq) %>%
