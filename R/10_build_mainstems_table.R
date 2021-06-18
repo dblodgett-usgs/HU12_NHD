@@ -6,18 +6,24 @@ build_mainstem_table <- function(nhdplus_net,
                                  nhdp_wbd,
                                  wbd,
                                  nhd1) {
-# Can add this back from it's not in the new nhgdplus attributes.  
-  # GNIS <- select(nhdplus_net, LevelPathI, Hydroseq, GNIS_ID, GNIS_NAME) %>%
-  #   filter(GNIS_ID != " ") %>%
-  #   group_by(LevelPathI) %>%
-  #   filter(Hydroseq == min(Hydroseq)) %>%
-  #   ungroup() %>% 
-  #   select(LevelPathI, outlet_GNIS_ID = GNIS_ID, outlet_GNIS_NAME = GNIS_NAME)
   
+  nhdplus_net <- left_join(nhdplus_net, 
+                           rename(nhdplusTools::get_vaa(atts = c("gnis_id", "gnis_name")),
+                                  COMID = comid, GNIS_ID = gnis_id, GNIS_NAME = gnis_name),
+                           by = "COMID")
+  
+# Can add this back from it's not in the new nhgdplus attributes.  
+  GNIS <- select(nhdplus_net, LevelPathI, Hydroseq, GNIS_ID, GNIS_NAME) %>%
+    filter(GNIS_ID != " ") %>%
+    group_by(LevelPathI) %>%
+    filter(Hydroseq == min(Hydroseq)) %>%
+    ungroup() %>%
+    select(LevelPathI, outlet_GNIS_ID = GNIS_ID, outlet_GNIS_NAME = GNIS_NAME)
+
   ms <- data.frame("LevelPathI" = unique(nhdplus_net$LevelPathI))
   
   ms <- ms %>%
-    # left_join(GNIS, by = "LevelPathI") %>%
+    left_join(GNIS, by = "LevelPathI") %>%
     left_join(select(get_lp_outlets(nhdplus_net),
                      LevelPathI, 
                      outlet_nhdpv2_COMID = COMID), by = "LevelPathI") %>%
@@ -112,7 +118,7 @@ add_v1 <- function(mainstems_table, nhdpv1_mapped) {
 
 
 make_ms_summary <- function(ms, nhdp_att) {
-  nhd_prep <- prepare_nhdplus(nhdp_att, 0, 0, 0, TRUE)
+  nhd_prep <- align_nhdplus_names(nhdp_att)
   
   area <- left_join(select(nhd_prep, ID = COMID, toID = toCOMID), select(nhdp_att, ID = COMID, area = AreaSqKM)) %>%
     calculate_total_drainage_area()
@@ -123,9 +129,7 @@ make_ms_summary <- function(ms, nhdp_att) {
     summarize(length = sum(LENGTHKM))
     
   summary <- data.frame(COMID = nhd_prep$COMID, totdasqkm = area) %>%
-    left_join(select(nhdp_att, COMID, LevelPathI, 
-                     level = StreamLeve, 
-                     order = StreamOrde), by = "COMID") %>%
+    left_join(select(nhdp_att, COMID, LevelPathI), by = "COMID") %>%
     left_join(ms_length, by = "LevelPathI") %>%
     select(-LevelPathI)
   
@@ -228,4 +232,32 @@ find_v1_mainstems <- function(v1, ms, cores = NA) {
   parallel::stopCluster(cl)
   
   return(nets)
+}
+
+upload_sb <- function(mainstems_table_summary) {
+  sb_id <- "60cb5edfd34e86b938a373f4"
+  
+  sbtools::authenticate_sb()
+  
+  files <- sbtools::item_list_files(sb_id)
+  
+  upload_list <- list(`nhdplusv2wbd.csv` = "out/nhdplus_oldwbd/map_joiner.csv",
+                      `newwbd.csv` = "out/nhdplus_newwbd/map_joiner.csv",
+                      `rf1.csv` = "out/rf1_out/map_joiner.csv")
+  
+  upload_list <- upload_list[!names(upload_list) %in% files$fname]
+  
+  for(f in names(upload_list)) {
+    fi <- upload_list[[f]]
+    
+    upload_file <- file.path(dirname(fi), f)
+    
+    if(file.rename(fi, upload_file)) {
+      message(upload_file)
+      
+      try(sbtools::item_append_files(sb_id = sb_id, files = upload_file))
+      file.rename(upload_file, fi)
+    }
+  }
+  
 }
