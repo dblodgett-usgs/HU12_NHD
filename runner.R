@@ -20,10 +20,10 @@ plan <- drake_plan(
   nhdp_v1_dir = "data/nhdpv1/",
   rf1_url = "https://water.usgs.gov/GIS/dsdl/erf1_2.e00.gz",
   rf1_dir = "data/RF1/",
+  ##### Load static dependencies
   rf1_file = download_rf1(rf1_dir, rf1_url),
   rf1 = clean_rf1(read_sf(rf1_file)),
   nhdplus_cats = st_transform(read_sf(nhdplus_gdb_path, "CatchmentSP"), prj),
-  ##### Load static dependencies
   nhdplus_wbd_fixes = get_fixes("nhdplusv2"),
   nhdplus_gdb_path = download_nhdplusv2(nhdplus_dir),
   nhdplus_wbd_exclusions = get_exclusions(nhdplus_gdb_path),
@@ -42,7 +42,7 @@ plan <- drake_plan(
   nhdplus_oldwbd_net_int = mainstems:::get_process_data(nhdplus_net, nhdplus_wbd, proc_simp),
   nhdplus_oldwbd_net_int_fix = nhdplus_oldwbd_net_int[!is.na(nhdplus_oldwbd_net_int$HUC12), ],
   nhdplus_oldwbd_hu_joiner = par_match_levelpaths(nhdplus_net, nhdplus_wbd, proc_simp, 
-                                                  cores, temp_dir, 
+                                                  cores, "oldwbdtemp/", 
                                                   paste0(nhdplus_oldwbd_out, 
                                                          "map_joiner.csv"),
                                                   nhdplus_oldwbd_net_int_fix, FALSE,
@@ -77,9 +77,10 @@ plan <- drake_plan(
   nhdplus_newwbd_out = "out/nhdplus_newwbd/",
   nhdplus_newwbd_net_int = mainstems:::get_process_data(nhdplus_net, wbd, proc_simp),
   nhdplus_newwbd_hu_joiner = par_match_levelpaths(nhdplus_net, wbd, proc_simp, cores, 
-                                                  temp_dir, file.path(nhdplus_newwbd_out,
+                                                  "newwbd_temp/", file.path(nhdplus_newwbd_out,
                                                                       "map_joiner.csv"), 
-                                                  nhdplus_newwbd_net_int),
+                                                  nhdplus_newwbd_net_int, FALSE,
+                                                  split_terminals),
   nhdplus_newwbd_hu_joiner_lengths = get_length_per_hu(nhdplus_net, wbd, proc_simp),
   nhdplus_newwbd_hu_joiner_override = filter_dominant_length(nhdplus_newwbd_hu_joiner, 
                                                              st_drop_geometry(nhdplus_newwbd_hu_joiner_lengths), 
@@ -125,7 +126,8 @@ plan <- drake_plan(
   plot_lps = get_lp_plots(plot_lps_data_all, 3, hu02, hu02_filter = "10",
                           bb = c(xmin = -103.5, ymin = 44.5, xmax = -101.5, ymax = 47)),
   plot_hw = get_hw_fig(),
-  upload = upload_sb(mainstems_table_summary)
+  geo_summary = make_geo_summary(nhdplus_net, mainstems_table_summary, "out/mainstems_summary.gpkg"),
+  upload = upload_sb(mainstems_table_summary, geo_summary)
 )
 
-# make(plan = plan, memory_strategy = "autoclean", garbage_collection = TRUE)
+make(plan = plan, memory_strategy = "autoclean", garbage_collection = TRUE)

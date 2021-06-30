@@ -127,3 +127,78 @@ filter_dominant_length <- function(hu_joiner, lp_lengths, net,
     bind_rows(switched) %>%
     filter(!HUC12 %in% remove$HUC12)
 }
+
+add_name_paths <- function(net, heads) {
+  
+  g <- hy_make_graph(net)
+  
+  for(head in names(heads)) {
+    
+    path <- hy_dfs(heads[[head]], "down", g = g, data = FALSE)
+    
+    path <- path[path %in% net$comid]
+    
+    replace <- net$nameID == "unknown" & net$comid %in% path
+    
+    net$nameID[replace] <- rep(head, sum(replace))
+    
+  }
+  
+  return(net)
+  
+}
+
+hy_make_graph <- function(net) {
+  suppressWarnings(
+    dplyr::select(net, comid, tocomid) %>%
+      igraph::graph_from_data_frame(directed = TRUE))
+}
+
+hy_dfs <- function(start, mode = "up", net = NULL, g = NULL, data = TRUE) {
+  
+  map_mode <- list(up = "in", down = "out")
+  
+  if(is.null(g)) {
+    
+    g <- hy_make_graph(net)
+    
+  }
+  
+  start_node <- which(names(V(g)) == as.character(start))
+  
+  sub_net <- igraph::dfs(g, 
+                         root = start_node, 
+                         neimode = map_mode[[mode]], 
+                         unreachable = FALSE)$order
+  
+  sub_net <- as.integer(names(sub_net[!is.na(sub_net)]))
+  
+  if(data) {
+    return(dplyr::filter(net, comid %in% sub_net))
+  } else {
+    return(sub_net)
+  }
+}
+
+add_names <- function(merit_natearth_heads, names, merit_atts) {
+  
+  names <- filter(names, !is.na(name)) %>%
+    distinct() %>%
+    group_by(rivernum) %>%
+    filter(row_number() == 1) # this is a hack
+  
+  merit_natearth_heads <- arrange(merit_natearth_heads, desc(hydroseq))
+
+  merit_natearth_heads <- left_join(merit_natearth_heads, 
+                                    names, by = "rivernum")
+    
+  merit_natearth_heads <- filter(merit_natearth_heads, !is.na(name))
+  
+  heads <- setNames(as.list(merit_natearth_heads$COMID), 
+                    merit_natearth_heads$name)
+  
+  merit_atts$nameID <- rep("unknown", nrow(merit_atts))
+  
+  add_name_paths(merit_atts, heads)
+  
+}

@@ -239,7 +239,7 @@ get_merit_atts <- function(riv, cores, merit_cache = "") {
   
 }
 
-write_merit <- function(riv, riv_atts, out_gpkg) {
+write_merit <- function(riv, riv_atts, out_gpkg, simp = FALSE) {
   
   if(file.exists(out_gpkg)) {
     message("returning cached merit plus data")
@@ -252,5 +252,179 @@ write_merit <- function(riv, riv_atts, out_gpkg) {
   write_sf(riv, out_gpkg, "merit_plus")
   
   riv
+}
+
+write_merit_share <- function(merit, merit_w_names, out_gpkg) {
+  merit <- select(merit, comid) %>%
+    left_join(merit_w_names)
+  
+  sf::sf_use_s2(FALSE)
+  
+  merit <- mutate(merit, 
+                  comid = as.integer(comid), 
+                  tocomid = as.integer(tocomid), 
+                  terminalpa = as.integer(terminalpa), 
+                  hydroseq = as.integer(hydroseq), 
+                  levelpathi = as.integer(levelpathi),
+                  dnlevelpat = as.integer(dnlevelpat), 
+                  dnhydroseq = as.integer(dnhydroseq),
+                  terminalfl = as.integer(terminalfl)) 
+  
+  merit <- select(merit, -weight)
+  
+  merit <- mutate(merit, down_levelpaths = gsub(",0$|^0$", "", down_levelpaths))
+  
+  merit <- st_simplify(merit, dTolerance = 0.005)
+  
+  write_sf(merit, out_gpkg, "merit_plus")
+  
+  add_merit_indexes(out_gpkg)
+  
+  merit
+}
+
+add_merit_indexes <- function(x) {
+  library(DBI)
+  
+  db <- dbConnect(RSQLite::SQLite(), x)
+  
+  dbExecute(db, "CREATE UNIQUE INDEX idx_comid ON merit_plus (comid);")
+  
+  add_idx <- c("nameID", "terminalpa", "levelpathi")
+  
+  sapply(add_idx, function(x, db) {
+    dbExecute(db, paste0("CREATE INDEX idx_", x, " ON merit_plus (", x, ");"))
+  }, db = db)
+  
+  dbDisconnect(db)
+}
+
+trim_line <- function(x, dist = 0.2) {
+  
+  coords <- st_coordinates(x) %>%
+    as.data.frame() %>%
+    nhdplusTools:::add_len() %>%
+    filter(len > dist & len < max(len) - dist) %>%
+    as.matrix()
+  
+  if(nrow(coords) < 2) {
+    
+    coords <- st_coordinates(x)
+    
+    mid <- round((nrow(coords) / 2))
+    
+    coords <- coords[(mid - 1):(mid + 1), 1:2]
+    
+  } else {
+    
+    coords <- coords[, 1:2]
+    
+  }
+  
+  return(st_linestring(coords))
+  
+}
+
+get_trimmed <- function(naturalearth_data) {
+  
+  naturalearth_data_trim <- do.call(
+    st_sfc, lapply(naturalearth_data$geometry, trim_line)
+  )
+  
+  naturalearth_data_trim <- st_sf(st_drop_geometry(naturalearth_data), 
+                                  geom = naturalearth_data_trim)
+  
+  sf::st_crs(naturalearth_data_trim) <- sf::st_crs(naturalearth_data)
+  
+  naturalearth_data_trim
+  
+}
+
+get_ends <- function(r, nd1, nd2, naturalearth_data) {
+  
+  all_r_b <- naturalearth_data$rivernum == r
+  
+  all_r <- naturalearth_data[all_r_b, ]
+  
+  all_nd <- bind_rows(nd1[all_r_b, ], nd2[all_r_b, ])
+  
+  all_dist <- st_distance(all_nd, by_element = FALSE) %>%
+    unclass()
+  
+  all_dist[lower.tri(all_dist, diag = TRUE)] <- NA
+  
+  all_dist <- tibble::as_tibble(all_dist) %>%
+    tibble::rowid_to_column() %>%
+    tidyr::gather(colid, distance, tidyr::starts_with("V")) %>%
+    arrange(desc(distance))
+  
+  furthest <- all_dist[1, ]
+  
+  rbind(all_nd[furthest$rowid, ], 
+        all_nd[gsub("V", "", furthest$colid), ])
+  
+}
+
+get_fp_ends <- function(naturalearth_data_trim) {
+  
+  nd1 <- get_node(naturalearth_data_trim, "start")
+  
+  nd2 <- get_node(naturalearth_data_trim, "end")
+  
+  
+  ends <- lapply(unique(naturalearth_data_trim$rivernum), get_ends, 
+                 naturalearth_data = naturalearth_data_trim, 
+                 nd1 = nd1, nd2 = nd2)
+  
+  ends <- do.call(rbind, ends)
+  
+  rivers <- unique(naturalearth_data_trim$rivernum)
+  
+  rivers <- rivers[rep(1:length(rivers), each = 2)]
+  
+  st_sf(rivernum = rivers, geom = sf::st_geometry(ends))
+}
+
+join_naturalearth_ends <- function(rivers, merit) {
+  
+  sf::sf_use_s2(FALSE)
+  
+  merit_simp <- 
+    select(merit, COMID = comid) %>%
+    mutate(REACHCODE = COMID, ToMeas = 100, FromMeas = 0)
+  
+  indexes <- merit_simp %>%
+    nhdplusTools::get_flowline_index(rivers, search_radius = 0.05, 
+                                     max_matches = 10)
+  
+  indexes %>%
+    left_join(select(st_drop_geometry(merit), comid, totdasqkm), 
+              by = c("COMID" = "comid")) %>%
+    left_join(mutate(rivers, id = seq(1:nrow(rivers))), by = "id") %>%
+    group_by(id) %>%
+    filter(totdasqkm == max(totdasqkm))
+  
+}
+
+get_naturalearth_heads <- function(naturalearth_data, merit) {
+  naturalearth_data <- 
+    dplyr::left_join(naturalearth_data, 
+                     select(sf::st_drop_geometry(merit), 
+                            comid, hydroseq, levelpathi, 
+                            terminalpa, terminalfl), 
+                     by = c("COMID" = "comid"))
+  
+  # Drop very small networks
+  small_nets <- sf::st_drop_geometry(merit) %>%
+    select(totdasqkm, terminalpa, hydroseq) %>%
+    filter(terminalpa == hydroseq & totdasqkm < 1000)
+  
+  out <- naturalearth_data %>%
+    filter(!terminalpa %in% small_nets$terminalpa &
+             terminalfl != 1) %>%
+    group_by(rivernum) %>%
+    filter(!is.na(hydroseq) & hydroseq == max(hydroseq)) %>%
+    ungroup()
+  
 }
 

@@ -1,0 +1,369 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<metadata>
+  <idinfo>
+    <citation>
+      <citeinfo>
+        <origin>David L Blodgett</origin>
+        <pubdate/>
+        <title>Mainstem Rivers of the Conterminous United States</title>
+        <geoform>vector digital data</geoform>
+        <pubinfo>
+          <pubplace>n/a</pubplace>
+          <publish>U.S. Geological Survey</publish>
+        </pubinfo>
+        <onlink>https://doi.org/10.5066/P9BTKP3T</onlink>
+        <lworkcit>
+          <citeinfo>
+            <origin>David Blodgett</origin>
+            <origin>J. Michael Johnson</origin>
+            <origin>Mark Sondheim</origin>
+            <origin>Michael Wieczorek</origin>
+            <origin>Nels Frazier</origin>
+            <pubdate>202101</pubdate>
+            <title>Mainstems: A logical data model implementing mainstem and drainage basin feature types based on WaterML2 Part 3: HY Features concepts</title>
+            <geoform>publication</geoform>
+            <serinfo>
+              <sername>Environmental Modelling &amp; Software</sername>
+              <issue>vol. 135</issue>
+            </serinfo>
+            <pubinfo>
+              <pubplace>n/a</pubplace>
+              <publish>Elsevier BV</publish>
+            </pubinfo>
+            <othercit>ppg. 104927</othercit>
+            <onlink>https://doi.org/10.1016/j.envsoft.2020.104927</onlink>
+          </citeinfo>
+        </lworkcit>
+      </citeinfo>
+    </citation>
+    <descript>
+      <abstract>"The data you have secured from the U.S. Geological Survey (USGS) database identified as Mainstem Rivers of the Conterminous United States have not received USGS approval and as such are provisional and subject to revision. The data are released on the condition that neither the USGS nor the U.S. Government shall be held liable for any damages resulting from its authorized or unauthorized use."
+
+"Although these data have been processed successfully on a computer system at the U.S. Geological Survey (USGS), no warranty expressed or implied is made regarding the display or utility of the data for other purposes, nor on all computer systems, nor shall the act of distribution constitute any such warranty. The USGS or the U.S. Government shall not be held liable for improper or incorrect use of the data described and/or contained herein."
+
+Mainstem rivers are the backbone of a connected network of hydrologic units that cover the landscape. A mainstem connects a headwater source area to an outlet. This data release identifies the same mainstem paths in hydrographic datasets for the conterminous US.</abstract>
+      <purpose>Persistent, cross-scale, identification of hydrologic features, network navigation, and hydrologic indexing (hydrographic addressing).</purpose>
+    </descript>
+    <timeperd>
+      <timeinfo>
+        <sngdate>
+          <caldate>20210101</caldate>
+        </sngdate>
+      </timeinfo>
+      <current>See Supplemental Info</current>
+    </timeperd>
+    <status>
+      <progress>In work</progress>
+      <update>As needed</update>
+    </status>
+    <spdom>
+      <descgeog>Coterminous United States</descgeog>
+      <bounding>
+        <westbc>-126.2109</westbc>
+        <eastbc>-65.2148</eastbc>
+        <northbc>49.8380</northbc>
+        <southbc>24.2069</southbc>
+      </bounding>
+    </spdom>
+    <keywords>
+      <theme>
+        <themekt>ISO 19115 Topic Category</themekt>
+        <themekey>planningCadastre</themekey>
+      </theme>
+      <place>
+        <placekt>None</placekt>
+        <placekey>Conterminous US	</placekey>
+      </place>
+    </keywords>
+    <accconst>None.  Please see 'Distribution Info' for details.</accconst>
+    <useconst>None.  Users are advised to read the dataset's metadata thoroughly to understand appropriate use and data limitations.</useconst>
+    <ptcontac>
+      <cntinfo>
+        <cntperp>
+          <cntper>David L Blodgett</cntper>
+          <cntorg>U.S. Geological Survey, WATER</cntorg>
+        </cntperp>
+        <cntpos>Civil Engineer</cntpos>
+        <cntaddr>
+          <addrtype>mailing address</addrtype>
+          <address>8505 Research Way</address>
+          <city>Middleton</city>
+          <state>WI</state>
+          <postal>53562</postal>
+          <country>US</country>
+        </cntaddr>
+        <cntvoice>608-628-5855</cntvoice>
+        <cntemail>dblodgett@usgs.gov</cntemail>
+      </cntinfo>
+    </ptcontac>
+  </idinfo>
+  <dataqual>
+    <attracc>
+      <attraccr>Attribute accuracy is primarily dependent on source datasets. In cases where major network connections were not present or were directed to the wrong basin, the "next downstream hydrologic unit" attribute (TOHUC) in the Watershed Boundary Dataset were adjusted to match the NHDPlusV2 network.</attraccr>
+    </attracc>
+    <logic>Logical consistency was check with numerous automated validations throughout the workflow software. Manual inspection of the dataset was conducted to verify major rivers are represented correctly. The number of features in the dataset precluded complete manual QA/QC.	</logic>
+    <complete>All mainstem rivers that could be identified in both the 12-digit watershed boundary dataset (see latest WBD input) and the NHDPlusV2 are included. In areas where hydrologic connectivity is ambiguous or a match between the WBD and NHDPlusV2 could not be established, no mainstem rivers are included.</complete>
+    <posacc>
+      <horizpa>
+        <horizpar>See input datasets</horizpar>
+      </horizpa>
+      <vertacc>
+        <vertaccr>NA</vertaccr>
+      </vertacc>
+    </posacc>
+    <lineage>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Lucinda McKay</origin>
+            <pubdate>20150101</pubdate>
+            <title>NHD Plus Version 2</title>
+            <geoform>vector digital data</geoform>
+            <onlink>https://www.epa.gov/waterdata/get-nhdplus-national-hydrography-dataset-plus-data</onlink>
+          </citeinfo>
+        </srccite>
+        <srcscale>100000</srcscale>
+        <typesrc>Digital and/or Hardcopy</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>20150101</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>NHDPlusV2</srccitea>
+        <srccontr>Primary source of network geometry</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Tim Bondelid</origin>
+            <pubdate>20100101</pubdate>
+            <title>NHD Plus Version 1</title>
+            <geoform>vector digital data</geoform>
+            <onlink>https://nhdplus.com/NHDPlus/NHDPlusV1_home.php</onlink>
+          </citeinfo>
+        </srccite>
+        <srcscale>100000</srcscale>
+        <typesrc>Digital and/or Hardcopy</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>20100101</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>NHDPlusV1</srccitea>
+        <srccontr>Source of network geometry and attributes	</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Lucinda McKay</origin>
+            <pubdate>20150101</pubdate>
+            <title>Watershed Boundary Dataset NHDPlusV2 Snapshot</title>
+            <geoform>vector digital data</geoform>
+            <onlink>https://www.epa.gov/waterdata/get-nhdplus-national-hydrography-dataset-plus-data</onlink>
+          </citeinfo>
+        </srccite>
+        <typesrc>Digital and/or Hardcopy</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>20150101</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>NHDPlusV2WBD</srccitea>
+        <srccontr>Source of hydrologic unit geometry and network connectivity.</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>U.S. Geological Survey</origin>
+            <origin>Natural Resources Conservation Service</origin>
+            <pubdate>20210517</pubdate>
+            <title>Watershed Boundary Dataset 2021-05-17</title>
+            <geoform>vector digital data</geoform>
+            <onlink>https://prd-tnm.s3.amazonaws.com/index.html?prefix=StagedProducts/Hydrography/WBD/National/GDB/</onlink>
+          </citeinfo>
+        </srccite>
+        <typesrc>Digital and/or Hardcopy</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>20210517</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>LatestWBD</srccitea>
+        <srccontr>Source of hydrologic unit geometry and network connectivity.</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Richard B. Alexander</origin>
+            <pubdate>19990801</pubdate>
+            <title>ERF1 -- Enhanced River Reach File 1.2	</title>
+            <geoform>vector digital data</geoform>
+            <onlink>https://water.usgs.gov/GIS/metadata/usgswrd/XML/erf1.xml</onlink>
+          </citeinfo>
+        </srccite>
+        <typesrc>Digital and/or Hardcopy</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>19990801</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>eRF12</srccitea>
+        <srccontr>Flowline geometry and network attributes.</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Andrew Bock</origin>
+            <pubdate/>
+            <title>Updated NHDPlusV2 Attributes Based on the E2NHD and NWM networks.</title>
+            <geoform>tabular digital data</geoform>
+            <onlink>https://www.sciencebase.gov/catalog/item/60c92503d34e86b9389df1c9</onlink>
+          </citeinfo>
+        </srccite>
+        <typesrc>Digital and/or Hardcopy</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate/>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>ENHD-NWM-Network</srccitea>
+        <srccontr>Source of best available network attributes.</srccontr>
+      </srcinfo>
+      <procstep>
+        <procdesc>Match level paths in the NHDPlusV2 and WBD.
+
+The NHDPlusV2 network with eNHD and NWM updates was used to validate and quality control the connectivity of the NHDPlusV2 WBD snapshot and the latest WBD snapshot. In this phase of processing, hydrologic unit topology (downstream connectivity attributes) were adjusted in places where tracing from a headwater hydrologic unit to outlet produced a path different than that found through spatial intersection of the downstream path implied by the NHDPlusV2. This algorithm is implemented in the function match_levelpaths().
+
+Once corrected, the resulting paired paths of hydrologic units were saved to a csv file. Two outputs were produced, one for the NHDPlusV2 snapshot (nhdplusv2wbd.csv) and one for the latest WBD snapshot (newwbd.csv). These CSV files can be joined to the HUC12 field of their respective WBD datasets.</procdesc>
+        <srcused>NHDPlusV2</srcused>
+        <srcused>ENHD-NWM-Network</srcused>
+        <srcused>NHDPlusV2WBD</srcused>
+        <srcused>LatestWBD</srcused>
+        <procdate>20210701</procdate>
+      </procstep>
+      <procstep>
+        <procdesc>Match flow paths in the NHDPlusV2 and RF1.
+
+The NHDPlusV2 catchments and flowline network with eNHD and NWM updates was used with the eRF1 geometry to find matching mainstem flowpaths in both datasets. For every eRF1 headwater, a representative headwater in the NHDPlusV2 was found. Using this as the starting place, a downstream trace was retrieved from the NHDPlusV2 network and a matching trace retrieved from the eRF1 network. Dominant downstream paths were then established as a method of deduplicating overlapping flowpath traces using NHDPlusV2 network attributes to determine dominance. This flowpath trace is implemented in the match_flowpath() function of the mainstems package.
+
+The resulting mainstem river paths were written to rf1.csv and can be joined to the ID field of the eRF1 dataset.</procdesc>
+        <srcused>NHDPlusV2</srcused>
+        <srcused>ENHD-NWM-Network</srcused>
+        <srcused>eRF12</srcused>
+        <procdate>20210701</procdate>
+      </procstep>
+      <procstep>
+        <procdesc>Match mainstems in NHDPlusV2 and NHDPlusV1
+
+Mainstems in the NHDPlusV1 were established using the published crosswalk between the NHDPlusV1 and NHDPlusV2. Where mappings were ambiguous, no maintem river association was made. The logic for this step can be found in "3_setup.R". 
+
+The output of this step is written to the overall mainstems summary table.</procdesc>
+        <srcused>NHDPlusV2</srcused>
+        <srcused>NHDPlusV1</srcused>
+        <srcused>ENHD-NWM-Network</srcused>
+        <procdate>20210701</procdate>
+      </procstep>
+      <procstep>
+        <procdesc>Create mainstems summary table
+
+The results of previous processing steps are used to create a single table summarizing all identified mainstem rivers. The primary identifier for a mainstem in this table is the levelapath id from the ENHD-NWM-Network. A headwater and outlet identifier is included for each of the five included datasets (NHDPlusV1, NHDPlusV2, NHDPlusV2 WBD, latest WBD, and eRF1.2). The GNIS ID and Name of the outlet of the mainstem is also included and is derived from NHDPlusV2 attributes. Two geomorphic attributes are included: total drainage area in square kilometers and the stream level as indicated by the mainstems network. A heavily simplified representative geometry based on the NHDPlusV2 flowline collection that makes up the mainstem is included for rudimentary visualization purposes. Any geoprocessing should rely on source datasets only.
+
+This processing step uses cached output of the previous steps. Inspect the workflow runner code for details.</procdesc>
+        <procdate>20210701</procdate>
+      </procstep>
+    </lineage>
+  </dataqual>
+  <spdoinfo>
+    <direct>Vector</direct>
+    <ptvctinf>
+      <sdtsterm>
+        <sdtstype>String</sdtstype>
+      </sdtsterm>
+    </ptvctinf>
+  </spdoinfo>
+  <spref>
+    <horizsys>
+      <geograph>
+        <latres>NA</latres>
+        <longres>NA</longres>
+        <geogunit>Decimal degrees</geogunit>
+      </geograph>
+      <geodetic>
+        <horizdn>World Geodetic System 1984 (WGS 84)</horizdn>
+        <ellips>WGS_1984</ellips>
+        <semiaxis/>
+        <denflat/>
+      </geodetic>
+    </horizsys>
+  </spref>
+  <distinfo>
+    <distrib>
+      <cntinfo>
+        <cntorgp>
+          <cntorg>U.S. Geological Survey</cntorg>
+          <cntper>GS ScienceBase</cntper>
+        </cntorgp>
+        <cntaddr>
+          <addrtype>mailing address</addrtype>
+          <address>Denver Federal Center, Building 810, Mail Stop 302</address>
+          <city>Denver</city>
+          <state>CO</state>
+          <postal>80225</postal>
+          <country>United States</country>
+        </cntaddr>
+        <cntvoice>1-888-275-8747</cntvoice>
+        <cntemail>sciencebase@usgs.gov</cntemail>
+      </cntinfo>
+    </distrib>
+    <distliab>Unless otherwise stated, all data, metadata and related materials are considered to satisfy the quality standards relative to the purpose for which the data were collected. Although these data and associated metadata have been reviewed for accuracy and completeness and approved for release by the U.S. Geological Survey (USGS), no warranty expressed or implied is made regarding the display or utility of the data on any other system or for general or scientific purposes, nor shall the act of distribution constitute any such warranty.</distliab>
+    <stdorder>
+      <digform><digtinfo>
+          <formname>Digital Data</formname>
+        </digtinfo>
+        <digtopt><onlinopt><computer><networka><networkr> https://doi.org/10.5066/P9BTKP3T</networkr></networka></computer></onlinopt></digtopt></digform>
+      <fees>None</fees>
+    </stdorder>
+  </distinfo>
+  <metainfo>
+    <metd>20210622</metd>
+    <metc>
+      <cntinfo>
+        <cntperp>
+          <cntper>David L Blodgett</cntper>
+          <cntorg>U.S. Geological Survey, WATER</cntorg>
+        </cntperp>
+        <cntpos>Civil Engineer</cntpos>
+        <cntaddr>
+          <addrtype>mailing address</addrtype>
+          <address>8505 Research Way</address>
+          <city>Middleton</city>
+          <state>WI</state>
+          <postal>53562</postal>
+          <country>US</country>
+        </cntaddr>
+        <cntvoice>608-628-5855</cntvoice>
+        <cntemail>dblodgett@usgs.gov</cntemail>
+      </cntinfo>
+    </metc>
+    <metstdn>FGDC Biological Data Profile of the Content Standard for Digital Geospatial Metadata</metstdn>
+    <metstdv>FGDC-STD-001.1-1999</metstdv>
+  </metainfo>
+</metadata>

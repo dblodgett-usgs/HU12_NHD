@@ -118,18 +118,28 @@ add_v1 <- function(mainstems_table, nhdpv1_mapped) {
 
 
 make_ms_summary <- function(ms, nhdp_att) {
-  nhd_prep <- align_nhdplus_names(nhdp_att)
+  nhdp_att <- align_nhdplus_names(nhdp_att)
   
-  area <- left_join(select(nhd_prep, ID = COMID, toID = toCOMID), select(nhdp_att, ID = COMID, area = AreaSqKM)) %>%
+  if(!"StreamLeve" %in% names(nhdp_att)) {
+    
+    nhdp_att$StreamLeve <-select(nhdp_att, 
+                                 levelpathi = LevelPathI, 
+                                 dnlevelpat = DnLevelPat) %>%
+      nhdplusTools::get_streamlevel()
+    
+  }
+  
+  area <- select(nhdp_att, ID = COMID, toID = toCOMID, area = AreaSqKM) %>%
     calculate_total_drainage_area()
   
   ms_length <- nhdp_att %>%
     select(LevelPathI, LENGTHKM) %>%
     group_by(LevelPathI) %>%
     summarize(length = sum(LENGTHKM))
-    
-  summary <- data.frame(COMID = nhd_prep$COMID, totdasqkm = area) %>%
-    left_join(select(nhdp_att, COMID, LevelPathI), by = "COMID") %>%
+
+  summary <- data.frame(COMID = nhdp_att$COMID, totdasqkm = area) %>%
+    left_join(select(nhdp_att, COMID, LevelPathI, level = StreamLeve), 
+              by = "COMID") %>%
     left_join(ms_length, by = "LevelPathI") %>%
     select(-LevelPathI)
   
@@ -234,16 +244,52 @@ find_v1_mainstems <- function(v1, ms, cores = NA) {
   return(nets)
 }
 
-upload_sb <- function(mainstems_table_summary) {
-  sb_id <- "60cb5edfd34e86b938a373f4"
+get_dlp <- function(x, dnlp) {
+  out <- dnlp[x]
   
-  sbtools::authenticate_sb()
+  if(out == 0) {
+    return(out)
+  }
   
-  files <- sbtools::item_list_files(sb_id)
+  c(out, get_dlp(out, dnlp))
+  
+}
+
+add_dm <- function(merit) {
+  lp <- select(merit, levelpathi, dnlevelpat) %>%
+    filter(levelpathi != dnlevelpat)
+  
+  dnlp <- data.frame(lp = seq(0, (max(lp$levelpathi)))) %>%
+    left_join(lp, by = c("lp" = "levelpathi"))
+  
+  dnlp <- dnlp$dnlevelpat[2:nrow(dnlp)]
+  
+  all_lp <- pbapply::pblapply(unique(lp$levelpathi), get_dlp, dnlp = dnlp)
+  
+  all_lp <- data.frame(levelpathi = unique(lp$levelpathi),
+                       dnlp = sapply(all_lp, paste, collapse = ","))
+  
+  merit %>%
+    left_join(all_lp, by = "levelpathi") %>%
+    rename(down_levelpaths = dnlp)
+}
+
+upload_sb <- function(mainstems_table_summary, geo_summary) {
   
   upload_list <- list(`nhdplusv2wbd.csv` = "out/nhdplus_oldwbd/map_joiner.csv",
                       `newwbd.csv` = "out/nhdplus_newwbd/map_joiner.csv",
-                      `rf1.csv` = "out/rf1_out/map_joiner.csv")
+                      `rf1.csv` = "out/rf1_out/map_joiner.csv", 
+                      `mainstems_summary.gpkg` = "out/mainstems_summary.gpkg")
+  
+  
+  upload_sb_fun(upload_list)
+  
+}
+
+upload_sb_fun <- function(upload_list, sb_id = "60cb5edfd34e86b938a373f4") {
+  sbtools::authenticate_sb()
+  
+  files <- sbtools::item_list_files(sb_id)
   
   upload_list <- upload_list[!names(upload_list) %in% files$fname]
   
@@ -259,5 +305,39 @@ upload_sb <- function(mainstems_table_summary) {
       file.rename(upload_file, fi)
     }
   }
+}
+
+make_geo_summary <- function(nhdplus_net, mainstems_table_summary, out_file) {
   
+  geom <- select(nhdplus_net, LevelPathI, Hydroseq) %>%
+    arrange(desc(Hydroseq)) %>%
+    group_by(LevelPathI) %>%
+    group_split(.keep = TRUE)
+
+  cl <- parallel::makeCluster(8)
+  
+  geoms <- pbapply::pblapply(geom, get_single_line, cl = cl)
+  
+  geoms <- do.call(c, geoms)
+  
+  geoms <- st_sf(LevelPathI = sort(unique(nhdplus_net$LevelPathI)),
+                 geom = geoms)
+  
+  mainstems_table_summary <- left_join(mainstems_table_summary, 
+                                       geoms, by = "LevelPathI")
+  
+  mainstems_table_summary <- sf::st_sf(mainstems_table_summary)
+  
+  write_sf(mainstems_table_summary, out_file)
+}
+
+get_single_line <- function(x) {
+  
+  sf::st_sfc(
+    sf::st_simplify(
+    sf::st_linestring(
+    sf::st_coordinates(sf::st_geometry(x))[, 1:2]),
+    dTolerance = units::set_units(100, "m")), 
+    crs = sf::st_crs(x))
+
 }

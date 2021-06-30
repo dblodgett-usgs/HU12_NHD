@@ -100,13 +100,11 @@ par_match_levelpaths <- function(net, wbd, simp, cores, temp_dir = "temp/",
       cl <- NULL
     }
     
-    to_run <- terminals$COMID
-
     dir.create(temp_dir, showWarnings = FALSE)
     already_run <- list.files(temp_dir, pattern = "*.rds")
     already_run <- as.numeric(gsub(".rds", "", already_run))
     
-    to_run <- terminals[!to_run %in% already_run,]
+    to_run <- terminals[!terminals$COMID %in% already_run,]
     
     to_run <- Map(list, to_run$COMID, to_run$stop)
     

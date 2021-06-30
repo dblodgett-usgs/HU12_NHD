@@ -304,7 +304,6 @@ get_lp_level <- function(order_f, ms, max_level) {
   level_f <- max_level - order_f + 1
   filter(ms, !is.na(outlet_nhdpv2HUC12) & 
            !is.na(outlet_GNIS_ID) & 
-           order >= order_f &
            level <= level_f)
 }
 
